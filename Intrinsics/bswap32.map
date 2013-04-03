@@ -1,0 +1,45 @@
+
+- YASM Map file ---------------------------------------------------------------
+
+Source file:  bswap32.asm
+Output file:  bswap32.o
+
+-- Program origin -------------------------------------------------------------
+
+00000000
+
+-- Sections (summary) ---------------------------------------------------------
+
+Vstart    Vstop     Start     Stop      Length    Class     Name
+00000000  0000003A  00000000  0000003A  0000003A  progbits  .text
+
+-- Sections (detailed) --------------------------------------------------------
+
+---- Section .text ------------------------------------------------------------
+
+class:     progbits
+length:    0000003A
+start:     00000000
+align:     00000004
+follows:   not defined
+vstart:    00000000
+valign:    00000004
+vfollows:  not defined
+
+-- Symbols --------------------------------------------------------------------
+
+---- No Section ---------------------------------------------------------------
+
+Value     Name
+00000004  trampoline_param_size
+00000005  trampoline_size
+
+
+---- Section .text ------------------------------------------------------------
+
+Real      Virtual   Name
+00000000  00000000  jit
+00000036  00000036  start
+0000003A  0000003A  end
+
+
