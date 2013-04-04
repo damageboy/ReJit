@@ -9,8 +9,8 @@ namespace HackJit
     static void Main(string[] args)
     {
       JIT.Init();
-      TestBSWAP64();
       TestBSWAP32();
+      TestBSWAP64();      
       TestRDTSC();
       TestRDTSCP();
       TestCPUID();
@@ -44,6 +44,7 @@ namespace HackJit
 
     private static void TestBSWAP64()
     {
+      Debugger.Break();
       var before = 0x1122334455667788U;
       Console.WriteLine("Before BSWAP64 0x{0:X8}", before);      
       var after = JIT.BSWAP64U(before);            

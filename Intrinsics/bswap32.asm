@@ -9,6 +9,7 @@ push        rbx
 mov         rbx,qword  [rsp+08]
 push        rsi
 push        rdi
+mov         rdx,rcx
 
 ; Block copy all the LEA insn
 lea rsi, [rel start]
@@ -22,9 +23,10 @@ rep stosb
 ; Pop in reverse
 pop         rdi
 pop         rsi
-sub         rbx,trampoline_size + trampoline_param_size
+sub         rbx,trampoline_size
 mov         qword [rsp+08h],rbx
 pop         rbx
+mov         rcx,rdx
 ret
 start:
 bswap ecx
