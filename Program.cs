@@ -5,15 +5,51 @@ namespace HackJit
 {
   class Program
   {
-    public const int MHZ = 2333333;
+    public const int MHZ = 2400000;
     static void Main(string[] args)
     {
       JIT.Init();
       TestBSWAP32();
-      TestBSWAP64();      
+      //TestBSWAP64();
+      TestBSF32();
+      TestBSF64();
+      TestBSR32();
+      TestBSR64();
       TestRDTSC();
       TestRDTSCP();
       TestCPUID();
+    }
+
+    private static void TestBSF32()
+    {
+      var test = 0x00000100U;
+      
+      var location = JIT.BSF32(test);
+      Console.WriteLine("BSF32 {0}", location);
+    }
+
+    private static void TestBSF64()
+    {
+      var test = 0x00000100U;
+
+      var location = JIT.BSF64(test);
+      Console.WriteLine("BSF64 {0}", location);
+    }
+
+    private static void TestBSR32()
+    {
+      var test = 0x00000100U;
+
+      var location = JIT.BSR32(test);
+      Console.WriteLine("BSR32 {0}", location);
+    }
+
+    private static void TestBSR64()
+    {
+      var test = 0x00000100U;
+
+      var location = JIT.BSR64(test);
+      Console.WriteLine("BSR32 {0}", location);
     }
 
     private unsafe static void TestCPUID()
@@ -27,7 +63,7 @@ namespace HackJit
       var p = (uint*) x;
       p[0] = ebx;
       p[1] = edx;
-      p[2] = ecx;    
+      p[2] = ecx;
 
       var cpuid0s = new string(x, 0, 12);
 
@@ -46,7 +82,7 @@ namespace HackJit
     {
       Debugger.Break();
       var before = 0x1122334455667788U;
-      Console.WriteLine("Before BSWAP64 0x{0:X8}", before);      
+      Console.WriteLine("Before BSWAP64 0x{0:X8}", before);
       var after = JIT.BSWAP64U(before);            
       Console.WriteLine("After  BSWAP64 0x{0:X8}", after);
     }
@@ -63,7 +99,7 @@ namespace HackJit
       sw.Stop();    
       Console.WriteLine("SW:     {0}ms",sw.ElapsedMilliseconds);
       Console.WriteLine("RDTSCP: {0}ms", (end - start) / MHZ);
-      Console.WriteLine("RDTSCP: {0}cycles", (end - start) / LOOP);   
+      Console.WriteLine("RDTSCP: {0}cycles", (end - start) / LOOP);
     }
 
 

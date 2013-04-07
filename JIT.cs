@@ -10,20 +10,18 @@ namespace HackJit
     ///Patching instructions like this is not "thread" safe.
   
     #region BSWAP32
-    public delegate int BSWAP32SignedDelegate(int dummy);
-    public delegate uint BSWAP32UnsignedDelegate(uint dummy);
     private static void PrepareBSWAP32()
     {
-      var methodSigned = ((BSWAP32SignedDelegate)BSWAP32S).Method.MethodHandle;
-      var methodUnsigned = ((BSWAP32UnsignedDelegate)BSWAP32U).Method.MethodHandle;
+      var methodSigned = typeof(JIT).GetMethod("BSWAP32S", new[] { typeof(int) }).MethodHandle;
+      var methodUnsigned = typeof(JIT).GetMethod("BSWAP32U", new[] { typeof(uint) }).MethodHandle;
       RuntimeHelpers.PrepareMethod(methodSigned);
       RuntimeHelpers.PrepareMethod(methodUnsigned);
       var p1 = methodSigned.GetFunctionPointer();
       var p2 = methodUnsigned.GetFunctionPointer();
-      var bswap32 = GetOpcodes("bswap32");
+      var code = GetOpcodes("bswap32");
       if (IntPtr.Size == 8) {
-        Marshal.Copy(bswap32, 0, p1, bswap32.Length);
-        Marshal.Copy(bswap32, 0, p2, bswap32.Length);
+        Marshal.Copy(code, 0, p1, code.Length);
+        Marshal.Copy(code, 0, p2, code.Length);
       }
       else
         throw new NotImplementedException();
@@ -50,25 +48,22 @@ namespace HackJit
       BSWAP32U(bige);
       return BSWAP32U(bige);
     }
-
     #endregion
 
     #region BSWAP64
-    public delegate long BSWAP64SignedDelegate(long bige, byte dummy);
-    public delegate ulong BSWAP64UnsignedDelegate(ulong bige, byte dummy);
     private static void PrepareBSWAP64()
     {
-      var methodSigned = ((BSWAP64SignedDelegate)BSWAP64S).Method.MethodHandle;
-      var methodUnsigned = ((BSWAP64UnsignedDelegate)BSWAP64U).Method.MethodHandle;
+      var methodSigned = typeof(JIT).GetMethod("BSWAP64S").MethodHandle;
+      var methodUnsigned = typeof(JIT).GetMethod("BSWAP64U").MethodHandle;
       RuntimeHelpers.PrepareMethod(methodSigned);
       RuntimeHelpers.PrepareMethod(methodUnsigned);
       var p1 = methodSigned.GetFunctionPointer();
       var p2 = methodUnsigned.GetFunctionPointer();
-      var bswap64 = GetOpcodes("bswap64");
+      var code = GetOpcodes("bswap64");
       if (IntPtr.Size == 8)
       {
-        Marshal.Copy(bswap64, 0, p1, bswap64.Length);
-        Marshal.Copy(bswap64, 0, p2, bswap64.Length);
+        Marshal.Copy(code, 0, p1, code.Length);
+        Marshal.Copy(code, 0, p2, code.Length);
       }
       else
         throw new NotImplementedException();
@@ -97,17 +92,184 @@ namespace HackJit
     }
     #endregion
 
+    #region BSF32
+    private static void PrepareBSF32()
+    {
+      var methodSigned = typeof (JIT).GetMethod("BSF32", new[] {typeof (int)}).MethodHandle;
+      var methodUnsigned = typeof (JIT).GetMethod("BSF32", new[] {typeof (uint)}).MethodHandle;
+      RuntimeHelpers.PrepareMethod(methodSigned);
+      RuntimeHelpers.PrepareMethod(methodUnsigned);
+      var p1 = methodSigned.GetFunctionPointer();
+      var p2 = methodUnsigned.GetFunctionPointer();
+      var code = GetOpcodes("bsf32");
+      if (IntPtr.Size == 8)
+      {
+        Marshal.Copy(code, 0, p1, code.Length);
+        Marshal.Copy(code, 0, p2, code.Length);
+      }
+      else
+        throw new NotImplementedException();
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static int BSF32(int test)
+    {
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      return BSF32(test);
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static uint BSF32(uint test)
+    {
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      BSF32(test);
+      return BSF32(test);
+    }
+    #endregion
+
+    #region BSR32
+    private static void PrepareBSR32()
+    {
+      var methodSigned = typeof(JIT).GetMethod("BSR32", new[] { typeof(int) }).MethodHandle;
+      var methodUnsigned = typeof(JIT).GetMethod("BSR32", new[] { typeof(uint) }).MethodHandle;
+      RuntimeHelpers.PrepareMethod(methodSigned);
+      RuntimeHelpers.PrepareMethod(methodUnsigned);
+      var p1 = methodSigned.GetFunctionPointer();
+      var p2 = methodUnsigned.GetFunctionPointer();
+      var code = GetOpcodes("bsr32");
+      if (IntPtr.Size == 8)
+      {
+        Marshal.Copy(code, 0, p1, code.Length);
+        Marshal.Copy(code, 0, p2, code.Length);
+      }
+      else
+        throw new NotImplementedException();
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static int BSR32(int test)
+    {
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      return BSR32(test);
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static uint BSR32(uint test)
+    {
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      BSR32(test);
+      return BSR32(test);
+    }
+    #endregion
+
+    #region BSF64
+    private static void PrepareBSF64()
+    {
+      var methodSigned = typeof(JIT).GetMethod("BSF64", new[] { typeof(long) }).MethodHandle;
+      var methodUnsigned = typeof(JIT).GetMethod("BSF64", new[] { typeof(ulong) }).MethodHandle;
+      RuntimeHelpers.PrepareMethod(methodSigned);
+      RuntimeHelpers.PrepareMethod(methodUnsigned);
+      var p1 = methodSigned.GetFunctionPointer();
+      var p2 = methodUnsigned.GetFunctionPointer();
+      var code = GetOpcodes("bsf64");
+      if (IntPtr.Size == 8)
+      {
+        Marshal.Copy(code, 0, p1, code.Length);
+        Marshal.Copy(code, 0, p2, code.Length);
+      }
+      else
+        throw new NotImplementedException();
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static int BSF64(long test)
+    {
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      return BSF64(test);
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static uint BSF64(ulong test)
+    {
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      BSF64(test);
+      return BSF64(test);
+    }
+    #endregion
+
+    #region BSR64
+    private static void PrepareBSR64()
+    {
+      var methodSigned = typeof(JIT).GetMethod("BSR64", new[] { typeof(long) }).MethodHandle;
+      var methodUnsigned = typeof(JIT).GetMethod("BSR64", new[] { typeof(ulong) }).MethodHandle;
+      RuntimeHelpers.PrepareMethod(methodSigned);
+      RuntimeHelpers.PrepareMethod(methodUnsigned);
+      var p1 = methodSigned.GetFunctionPointer();
+      var p2 = methodUnsigned.GetFunctionPointer();
+      var code = GetOpcodes("bsr64");
+      if (IntPtr.Size == 8)
+      {
+        Marshal.Copy(code, 0, p1, code.Length);
+        Marshal.Copy(code, 0, p2, code.Length);
+      }
+      else
+        throw new NotImplementedException();
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static int BSR64(long test)
+    {
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      return BSR64(test);
+    }
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    public static uint BSR64(ulong test)
+    {
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      BSR64(test);
+      return BSR64(test);
+    }
+    #endregion
+
     #region RDTSCP
-    public delegate ulong RDTSCPDelegate(int dummy);
     private static void PrepareRDTSCP()
     {
-      var method = ((RDTSCPDelegate)RDTSCP).Method.MethodHandle;
+      var method = typeof(JIT).GetMethod("RDTSCP").MethodHandle;
       RuntimeHelpers.PrepareMethod(method);
-      var rdtscp = GetOpcodes("rdtscp");
+      var code = GetOpcodes("rdtscp");
       var p = method.GetFunctionPointer();
 
       if (IntPtr.Size == 8)
-        Marshal.Copy(rdtscp, 0, p, rdtscp.Length);
+        Marshal.Copy(code, 0, p, code.Length);
       else
         throw new NotImplementedException();
     }
@@ -125,15 +287,14 @@ namespace HackJit
     #endregion
 
     #region CPUID
-    public delegate void CPUIDDelegate(ref uint eax, out uint ebx, out uint ecx, out uint edx, uint dummy1, ushort dummy2, byte dummy3);
     private static void PrepareCPUID()
-    {  
-      var method = ((CPUIDDelegate)CPUID).Method.MethodHandle;
+    {
+      var method = typeof(JIT).GetMethod("CPUID").MethodHandle;
       RuntimeHelpers.PrepareMethod(method);
       var p = method.GetFunctionPointer();
-      var cpuid = GetOpcodes("cpuid");
+      var code = GetOpcodes("cpuid");
       if (IntPtr.Size == 8)
-        Marshal.Copy(cpuid, 0, p, cpuid.Length);
+        Marshal.Copy(code, 0, p, code.Length);
       else
         throw new NotImplementedException();
     }
@@ -173,15 +334,14 @@ namespace HackJit
     #endregion
 
     #region RDTSC
-    public delegate ulong RDTSCDelegate(int dummy1, byte dummy2);
     private static void PrepareRDTSC()
     {
-      var method = ((RDTSCDelegate)RDTSC).Method.MethodHandle;
+      var method = typeof(JIT).GetMethod("RDTSC").MethodHandle;
       RuntimeHelpers.PrepareMethod(method);
       var p = method.GetFunctionPointer();
-      var rdtsc = GetOpcodes("rdtsc");
+      var code = GetOpcodes("rdtsc");
       if (IntPtr.Size == 8)
-        Marshal.Copy(rdtsc, 0, p, rdtsc.Length);
+        Marshal.Copy(code, 0, p, code.Length);
       else
         throw new NotImplementedException();
     }
@@ -204,10 +364,12 @@ namespace HackJit
       PrepareCPUID();
       PrepareBSWAP32();
       PrepareBSWAP64();
-      PrepareRDTSC();    
+      PrepareBSF32();
+      PrepareBSR32();
+      PrepareBSF64();
+      PrepareBSR64();
+      PrepareRDTSC();
       PrepareRDTSCP();
-    
-      //PrepareBSWAP32();
     }
   }
 }
