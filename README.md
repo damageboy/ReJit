@@ -1,6 +1,7 @@
 HackJit
 =======
 
+# What #
 HackJit aims to add useful x64 (only for now, no x86 since I'm lazy).
 The method is based on a hack shown by [@JeroenFrijters](https://twitter.com/JeroenFrijters) of [IKVM.NET](http://www.ikvm.net/) fame: [How to Hack Your Own JIT Intrinsic](http://weblog.ikvm.net/PermaLink.aspx?guid=7dc34fd3-215d-467d-a331-e1de9023e0d1](http://weblog.ikvm.net/PermaLink.aspx?guid=7dc34fd3-215d-467d-a331-e1de9023e0d1 "How to Hack Your Own JIT Intrinsic")
 
@@ -12,9 +13,34 @@ The reason I refer to these implementations as methods with quotation marks is t
 When the method is first executed, it patches the caller's code to use the x64 assembly instead of calling the method.
 So in reality the first call to the "method" from each call site actually triggers a code path that modifies the code into using said intrinsics.
 
+
+# Supported Initrinsics #
 The supported intrinsics currently are:
 - BSWAP32 (signed/unsigned)
-- BSWAP64 (signed/unsigned)
+- BSWAP64 (signed/unsigned) Note: Not currently working
+- BSR32 (signed/unsigned)
+- BSF32 (signed/unsigned)
+- BSR64 (signed/unsigned)
+- BSF64 (signed/unsigned)
 - RDTSC (with memory barrier)
 - RDTSCP
 - CPUID
+
+# Todo #
+
+- AES*
+- MFENCE
+- SFENCE
+- WBINVD
+- CLFLUSH
+- BTS
+- BTR
+- BT
+- BTC
+- INVD
+- RDRAND
+- PREFETCH0/1/2/NTA
+- POPCNT
+- PAUSE
+- CMPXCHNG8B/CMPXCHNG16B
+
