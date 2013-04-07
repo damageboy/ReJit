@@ -11,20 +11,33 @@ namespace HackJit
       JIT.Init();
       TestBSWAP32();
       //TestBSWAP64();
+      TestBSF16();
       TestBSF32();
       TestBSF64();
+      TestBSR16();
       TestBSR32();
       TestBSR64();
+      //TestPOPCNT16();
+      TestPOPCNT32();
+      TestPOPCNT64();
       TestRDTSC();
-      TestRDTSCP();
+      //TestRDTSCP();
       TestCPUID();
+    }
+
+    private static void TestBSF16()
+    {
+      var test = (ushort) 0x0100U;
+
+      var location = JIT.BSF(test);
+      Console.WriteLine("BSF16 {0}", location);
     }
 
     private static void TestBSF32()
     {
       var test = 0x00000100U;
       
-      var location = JIT.BSF32(test);
+      var location = JIT.BSF(test);
       Console.WriteLine("BSF32 {0}", location);
     }
 
@@ -32,15 +45,23 @@ namespace HackJit
     {
       var test = 0x00000100U;
 
-      var location = JIT.BSF64(test);
+      var location = JIT.BSF(test);
       Console.WriteLine("BSF64 {0}", location);
+    }
+
+    private static void TestBSR16()
+    {
+      var test = (ushort)0x0100U;
+
+      var location = JIT.BSR(test);
+      Console.WriteLine("BSR16 {0}", location);
     }
 
     private static void TestBSR32()
     {
       var test = 0x00000100U;
 
-      var location = JIT.BSR32(test);
+      var location = JIT.BSR(test);
       Console.WriteLine("BSR32 {0}", location);
     }
 
@@ -48,9 +69,34 @@ namespace HackJit
     {
       var test = 0x00000100U;
 
-      var location = JIT.BSR64(test);
+      var location = JIT.BSR(test);
       Console.WriteLine("BSR32 {0}", location);
     }
+
+    private static void TestPOPCNT16()
+    {
+      var test = (ushort) 0x0F0FU;
+
+      var location = JIT.POPCNT(test);
+      Console.WriteLine("POPCNT32 {0}", location);
+    }
+
+    private static void TestPOPCNT32()
+    {
+      var test = 0x0F0F0F0FU;
+
+      var location = JIT.POPCNT(test);
+      Console.WriteLine("POPCNT32 {0}", location);
+    }
+
+    private static void TestPOPCNT64()
+    {
+      var test = 0x0F0F0F0F0F0F0F0FLU;
+
+      var location = JIT.POPCNT(test);
+      Console.WriteLine("POPCNT64 {0}", location);
+    }
+
 
     private unsafe static void TestCPUID()
     {

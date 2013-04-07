@@ -1,0 +1,45 @@
+
+- YASM Map file ---------------------------------------------------------------
+
+Source file:  popcnt16.asm
+Output file:  popcnt16.o
+
+-- Program origin -------------------------------------------------------------
+
+00000000
+
+-- Sections (summary) ---------------------------------------------------------
+
+Vstart    Vstop     Start     Stop      Length    Class     Name
+00000000  00000041  00000000  00000041  00000041  progbits  .text
+
+-- Sections (detailed) --------------------------------------------------------
+
+---- Section .text ------------------------------------------------------------
+
+class:     progbits
+length:    00000041
+start:     00000000
+align:     00000004
+follows:   not defined
+vstart:    00000000
+valign:    00000004
+vfollows:  not defined
+
+-- Symbols --------------------------------------------------------------------
+
+---- No Section ---------------------------------------------------------------
+
+Value     Name
+00000004  trampoline_param_size
+00000005  trampoline_size
+
+
+---- Section .text ------------------------------------------------------------
+
+Real      Virtual   Name
+00000000  00000000  jit
+0000003C  0000003C  start
+00000041  00000041  end
+
+
