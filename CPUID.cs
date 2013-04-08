@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace HackJit
@@ -8,25 +10,48 @@ namespace HackJit
   public class CPUID
   {
     static string _vendorString;
-    static uint _eax01, _ebx01, _ecx01, _edx01;
-    static uint _eax80000001, _ebx80000001, _ecx80000001, _edx80000001;
-    static uint _eax80000007, _ebx80000007, _ecx80000007, _edx80000007;
-    static bool _f01;
-    static bool _f80000001;
-    static bool _f80000007;
     static uint _maxSupported;
     static uint _maxExtendedSupported;
+    static Dictionary<uint, uint[]> _values;
+    private static Dictionary<CPUIDFeature, CPUIDFeaturesAttribute> _fetureInfo;
+
 
     static CPUID() 
     {
       uint eax, ebx, ecx, edx;
       eax = 0x00;
       ebx = ecx = edx = 0x00;
+      _values = new Dictionary<uint, uint[]>();
       JIT.CPUID(ref eax, out ebx, out ecx, out edx);
       _maxSupported = eax;
       eax = 0x80000000;
       JIT.CPUID(ref eax, out ebx, out ecx, out edx);
       _maxExtendedSupported = eax;
+
+      for (var i = 0U; i <= _maxSupported; i++)
+      {
+        eax = i;
+        ebx = ecx = edx = 0x00;
+        JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+        _values[i] = new [] { eax, ebx, ecx, edx };
+      }
+
+      for (var i = 0x80000000U; i <= _maxSupported; i++)
+      {
+        eax = i;
+        ebx = ecx = edx = 0x00;
+        JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+        _values[i] = new[] { eax, ebx, ecx, edx };
+      }
+
+      var q = 
+        from m in typeof(CPUIDFeature).GetMembers()
+        let attr = (CPUIDFeaturesAttribute) m.GetCustomAttributes(typeof (CPUIDFeaturesAttribute), false).Single()
+        select new {
+          Feature = (CPUIDFeature) Enum.Parse(typeof(CPUIDFeature), m.Name),
+          Attr = attr
+        };
+      _fetureInfo = q.ToDictionary(x => x.Feature, x => x.Attr);
     }
 
     public unsafe string VendorString
@@ -40,9 +65,9 @@ namespace HackJit
           JIT.CPUID(ref eax, out ebx, out ecx, out edx);
           var x = stackalloc sbyte[12];
           var p = (uint*)x;
-          p[0] = ebx;
-          p[1] = edx;
-          p[2] = ecx;
+          p[0] = _values[0][EBX];
+          p[1] = _values[0][EDX];
+          p[2] = _values[0][ECX];
       
 
           _vendorString = new string(x, 0, 12);
@@ -51,100 +76,232 @@ namespace HackJit
       }
     }
 
-    private static void Get01()
+    public static bool ISSupported(CPUIDFeature feature)
     {
-      if (_f01)
-        return;
-      if (_maxSupported < 0x01)
-        return;
-      _eax01 = 0x01;
-      JIT.CPUID(ref _eax01, out _ebx01, out _ecx01, out _edx01);
-      _f01 = true;
+      var info = _fetureInfo[feature];
+      return (_values[info.Function][info.Register] & (1U << info.Bit)) == 1;
     }
 
-    private static void Get80000001()
+    public const int EAX = 0;
+    public const int EBX = 1;
+    public const int ECX = 2;
+    public const int EDX = 3;
+
+    [AttributeUsage(AttributeTargets.Field)]
+    public class CPUIDFeaturesAttribute : Attribute 
     {
-      if (_f80000001)
-        return;
-      if (_maxExtendedSupported < 0x80000001)
-        return;
-      _eax01 = 0x80000001;
-      JIT.CPUID(ref _eax80000001, out _ebx80000001, out _ecx80000001, out _edx80000001);
-      _f80000001 = true;
+      public CPUIDFeaturesAttribute(uint function, int register, int bit)
+      {
+        Function = function;
+        Register = register;
+        Bit = bit;        
+      }
+
+      public uint Function { get; private set; }
+      public int Register { get; private set; }
+      public int Bit { get; private set; }
     }
 
-
-    private static void Get80000007()
+    public enum CPUIDFeature
     {
-      if (_f80000007)
-        return;
-      if (_maxExtendedSupported < 0x80000007)
-        return;
-      _eax01 = 0x80000007;
-      JIT.CPUID(ref _eax80000007, out _ebx80000007, out _ecx80000007, out _edx80000007);
-      _f80000007 = true;
-    }
+      [Description("Streaming SIMD Extensions 3 (SSE3)")]
+      [CPUIDFeatures(0x01, ECX, 0)]
+      SSE3,
+      [Description("PCLMULQDQ instruction")]
+      [CPUIDFeatures(0x01, ECX, 1)]
+      PCLMULQDQ,
+      [Description("64-bit DS Area")]
+      [CPUIDFeatures(0x01, ECX, 2)]
+      DTES64,
+      [Description("MONITOR/MWAIT")]
+      [CPUIDFeatures(0x01, ECX, 3)]
+      Monitor,
+      [Description("CPL Qualified Debug Store")]
+      [CPUIDFeatures(0x01, ECX, 4)]
+      DSCPL,
+      [Description("Virtual Machine Extensions")]
+      [CPUIDFeatures(0x01, ECX, 5)]
+      VMX,
+      [Description("Safer Mode Extensions")]
+      [CPUIDFeatures(0x01, ECX, 6)]
+      SMX,
+      [Description("Enhanced Intel SpeedStep® technology")]
+      [CPUIDFeatures(0x01, ECX, 7)]
+      EIST,
+      [Description("Thermal Monitor 2")]
+      [CPUIDFeatures(0x01, ECX, 8)]
+      TM2,
+      [Description("Supplemental Streaming SIMD Extensions 3 (SSSE3)")]
+      [CPUIDFeatures(0x01, ECX, 9)]
+      SSSE3,
+      [Description("L1 Context ID")]
+      [CPUIDFeatures(0x01, ECX, 10)]
+      CNXTID,
+      [Description("FMA extensions")]
+      [CPUIDFeatures(0x01, ECX, 12)]
+      FMA,
 
-    public static bool SSE3Supported     { get { Get01(); return (_ecx01 & (1 << 0)) == 1; } }
-    public static bool MonitorSupported  { get { Get01(); return (_ecx01 & (1 << 3)) == 1; } }
-    public static bool VMXSupported      { get { Get01(); return (_ecx01 & (1 << 5)) == 1; } }
-    public static bool SMXSupported      { get { Get01(); return (_ecx01 & (1 << 6)) == 1; } }
-    public static bool EISTSupported     { get { Get01(); return (_ecx01 & (1 << 7)) == 1; } }
-    public static bool SSSE3Supported    { get { Get01(); return (_ecx01 & (1 << 9)) == 1; } }
-    public static bool CX16Supported     { get { Get01(); return (_ecx01 & (1 << 13)) == 1; } }
-    public static bool PCIDSupported     { get { Get01(); return (_ecx01 & (1 << 17)) == 1; } }
-    public static bool DCASupported      { get { Get01(); return (_ecx01 & (1 << 18)) == 1; } }
-    public static bool SSE41Supported    { get { Get01(); return (_ecx01 & (1 << 19)) == 1; } }
-    public static bool SSE42Supported    { get { Get01(); return (_ecx01 & (1 << 20)) == 1; } }
-    public static bool X2APICSupported   { get { Get01(); return (_ecx01 & (1 << 21)) == 1; } }
-    public static bool MOVBESupported    { get { Get01(); return (_ecx01 & (1 << 22)) == 1; } }
-    public static bool POPCNTSupported   { get { Get01(); return (_ecx01 & (1 << 23)) == 1; } }
-    
-    public static bool AESNISupported    { get { Get01(); return (_ecx01 & (1 << 25)) == 1; } }
-    public static bool AVXSupported      { get { Get01(); return (_ecx01 & (1 << 28)) == 1; } }
-    public static bool F16CSupported     { get { Get01(); return (_ecx01 & (1 << 29)) == 1; } }
-    public static bool RDRANDSupported   { get { Get01(); return (_ecx01 & (1 << 30)) == 1; } }
+      [Description("CMPXCHG16B Instruction")]
+      [CPUIDFeatures(0x01, ECX, 13)]
+      CX16,
+      [Description("xTPR Update Control")]
+      [CPUIDFeatures(0x01, ECX, 14)]
+      XTPRUpdate,
+      [Description("Perfmon and Debug Capability")]
+      [CPUIDFeatures(0x01, ECX, 15)]
+      PDCM,
+      [Description("Process-context identifiers")]
+      [CPUIDFeatures(0x01, ECX, 17)]
+      PCID,
+      [Description("Direct Cache Access")]
+      [CPUIDFeatures(0x01, ECX, 18)]
+      DCA,
+      [Description("Streaming SIMD Extensions 4.1 (SSE4.1)")]
+      [CPUIDFeatures(0x01, ECX, 19)]
+      SSE41,
+      [Description("Streaming SIMD Extensions 4.2 (SSE4.2)")]
+      [CPUIDFeatures(0x01, ECX, 20)]
+      SSE42,
+      [Description("x2APIC")]
+      [CPUIDFeatures(0x01, ECX, 21)]
+      X2APIC,
+      [Description("MOVBE Instruction")]
+      [CPUIDFeatures(0x01, ECX, 22)]
+      MOVBE,
+      [Description("POPCNT Instruction")]
+      [CPUIDFeatures(0x01, ECX, 23)]
+      POPCNT,
+      [Description("APIC timer supports TSC Deadline value")]
+      [CPUIDFeatures(0x01, ECX, 24)]
+      TSCDeadline,
+      [Description("AESNI Instructions")]
+      [CPUIDFeatures(0x01, ECX, 25)]
+      AESNI,
+      [Description("XSAVE/XRSTOR processor extended state feature")]
+      [CPUIDFeatures(0x01, ECX, 26)]
+      XSAVE,      
+      [Description("XSETBV/XGETBV instructions to access XCR0,")]
+      [CPUIDFeatures(0x01, ECX, 27)]
+      OSXSAVE,
+      [Description("AVX")]
+      [CPUIDFeatures(0x01, ECX, 28)]
+      AVX,
+      [Description("16-bit floating-point conversion")]
+      [CPUIDFeatures(0x01, ECX, 29)]
+      F16C,
+      [Description("RDRAND Instruction")]
+      [CPUIDFeatures(0x01, ECX, 30)]
+      RDRAND,
 
-    public static bool FPUSupported      { get { Get01(); return (_edx01 & (1 << 0))  == 1; } }
-    public static bool VMESupported      { get { Get01(); return (_edx01 & (1 << 1))  == 1; } }
-    public static bool DESupported       { get { Get01(); return (_edx01 & (1 << 2))  == 1; } }
-    public static bool PSESupported      { get { Get01(); return (_edx01 & (1 << 3))  == 1; } }
-    public static bool TSCSupported      { get { Get01(); return (_edx01 & (1 << 4))  == 1; } }
-    public static bool MSRSupported      { get { Get01(); return (_edx01 & (1 << 5))  == 1; } }
-    public static bool PAESupported      { get { Get01(); return (_edx01 & (1 << 6))  == 1; } }
-    public static bool MCESupported      { get { Get01(); return (_edx01 & (1 << 7))  == 1; } }
-    public static bool CX8Supported      { get { Get01(); return (_edx01 & (1 << 8))  == 1; } }
-    public static bool APICSupported     { get { Get01(); return (_edx01 & (1 << 9))  == 1; } }
-    public static bool SysenterSupported { get { Get01(); return (_edx01 & (1 << 11)) == 1; } }
-    public static bool MTRRSupported     { get { Get01(); return (_edx01 & (1 << 12)) == 1; } }
-    public static bool PGESupported      { get { Get01(); return (_edx01 & (1 << 13)) == 1; } }
-    public static bool MCASupported      { get { Get01(); return (_edx01 & (1 << 14)) == 1; } }
-    public static bool CMOVSupported     { get { Get01(); return (_edx01 & (1 << 15)) == 1; } }
-    public static bool PATSupported      { get { Get01(); return (_edx01 & (1 << 16)) == 1; } }
-    public static bool PSE36Supported    { get { Get01(); return (_edx01 & (1 << 17)) == 1; } }
-    public static bool PSNSupported      { get { Get01(); return (_edx01 & (1 << 18)) == 1; } }
-    public static bool CLFLUSHSupported  { get { Get01(); return (_edx01 & (1 << 19)) == 1; } }
-    public static bool DSSupported       { get { Get01(); return (_edx01 & (1 << 21)) == 1; } }
-    public static bool ACPISupported     { get { Get01(); return (_edx01 & (1 << 22)) == 1; } }
-    public static bool MMXSupported      { get { Get01(); return (_edx01 & (1 << 23)) == 1; } }
-    public static bool FXSRSupported     { get { Get01(); return (_edx01 & (1 << 24)) == 1; } }
-    public static bool SSESupported      { get { Get01(); return (_edx01 & (1 << 25)) == 1; } }
-    public static bool SSE2Supported     { get { Get01(); return (_edx01 & (1 << 26)) == 1; } }
-    public static bool SSSupported       { get { Get01(); return (_edx01 & (1 << 27)) == 1; } }
-    public static bool HTTSupported      { get { Get01(); return (_edx01 & (1 << 28)) == 1; } }
-    public static bool TMSupported       { get { Get01(); return (_edx01 & (1 << 29)) == 1; } }
-    public static bool PBESupported      { get { Get01(); return (_edx01 & (1 << 31)) == 1; } }
 
-    public static bool SEP64Supported   { get { Get80000001(); return (_edx01 & (1 << 11)) == 1; } }
-    public static bool NXSupported      { get { Get80000001(); return (_edx01 & (1 << 20)) == 1; } }
-    public static bool GBPSupported     { get { Get80000001(); return (_edx01 & (1 << 26)) == 1; } }
-    public static bool RDTSCPSupported  { get { Get80000001(); return (_edx01 & (1 << 27)) == 1; } }
-    public static bool Intel64Supported { get { Get80000001(); return (_edx01 & (1 << 29)) == 1; } }
-    
-
-    public static bool InvariantTSCSupported { get { Get80000007(); return (_edx01 & (1 << 8)) == 1; } }
-
+      [Description("Floating Point Unit On-Chip")]
+      [CPUIDFeatures(0x01, EDX, 0)]
+      FPU,
+      [Description("Virtual 8086 Mode Enhancements")]
+      [CPUIDFeatures(0x01, EDX, 1)]
+      VME,
+      [Description("Debugging Extensions")]
+      [CPUIDFeatures(0x01, EDX, 2)]
+      DE,
+      [Description("Page Size Extension")]
+      [CPUIDFeatures(0x01, EDX, 3)]
+      PSE,
+      [Description("Time Stamp Counter")]
+      [CPUIDFeatures(0x01, EDX, 4)]
+      TSC,
+      [Description("Model Specific Registers RDMSR and WRMSR Instructions")]
+      [CPUIDFeatures(0x01, EDX, 5)]
+      MSR,
+      [Description("Physical Address Extension")]
+      [CPUIDFeatures(0x01, EDX, 6)]
+      PAE,
+      [Description("Machine Check Exception")]
+      [CPUIDFeatures(0x01, EDX, 7)]
+      MCE,
+      [Description("CMPXCHG8B Instruction")]
+      [CPUIDFeatures(0x01, EDX, 8)]
+      CX8,
+      [Description("APIC On-Chip")]
+      [CPUIDFeatures(0x01, EDX, 9)]
+      APIC,
+      [Description("SYSENTER and SYSEXIT Instructions")]
+      [CPUIDFeatures(0x01, EDX, 11)]
+      SYSENTER,
+      [Description("Memory Type Range Registers")]
+      [CPUIDFeatures(0x01, EDX, 12)]
+      MTRR,
+      [Description("Page Global Bit")]
+      [CPUIDFeatures(0x01, EDX, 13)]
+      PGE,
+      [Description("Machine Check Architecture")]
+      [CPUIDFeatures(0x01, EDX, 14)]
+      MCA,
+      [Description("Conditional Move Instructions")]
+      [CPUIDFeatures(0x01, EDX, 15)]
+      CMOV,
+      [Description("Page Attribute Table")]
+      [CPUIDFeatures(0x01, EDX, 16)]
+      PAT,
+      [Description("36-Bit Page Size Extension")]
+      [CPUIDFeatures(0x01, EDX, 17)]
+      PSE36,
+      [Description("Processor Serial Number")]
+      [CPUIDFeatures(0x01, EDX, 18)]
+      PSN,
+      [Description("CLFLUSH Instruction")]
+      [CPUIDFeatures(0x01, EDX, 19)]
+      CLFLUSH,
+      [Description("Debug Store")]
+      [CPUIDFeatures(0x01, EDX, 21)]
+      DS,
+      [Description("Thermal Monitor and Software Controlled Clock Facilities")]
+      [CPUIDFeatures(0x01, EDX, 22)]
+      ACPI,
+      [Description("Intel MMX Technology")]
+      [CPUIDFeatures(0x01, EDX, 23)]
+      MMX,
+      [Description("FXSAVE and FXRSTOR Instructions")]
+      [CPUIDFeatures(0x01, EDX, 24)]
+      FSXR,
+      [Description("Streaming SIMD Extensions (SSE)")]
+      [CPUIDFeatures(0x01, EDX, 25)]
+      SSE,
+      [Description("Streaming SIMD Extensions 2 (SSE2)")]
+      [CPUIDFeatures(0x01, EDX, 26)]
+      SSE2,
+      [Description("Self Snoop")]
+      [CPUIDFeatures(0x01, EDX, 27)]
+      SS,
+      [Description("Max APIC IDs reserved field is Valid")]
+      [CPUIDFeatures(0x01, EDX, 28)]
+      HTT,
+      [Description("Thermal Monitor")]
+      [CPUIDFeatures(0x01, EDX, 29)]
+      TM,
+      [Description("Pending Break Enable")]
+      [CPUIDFeatures(0x01, EDX, 31)]
+      PBE,
 
       
+      [Description("SYSCALL/SYSENTER in 64 bit mode")]
+      [CPUIDFeatures(0x80000001, EDX, 11)]
+      SYSCALL64,
+      [Description("No Execute But")]
+      [CPUIDFeatures(0x80000001, EDX, 20)]
+      NX,
+      [Description("1GB Pages")]
+      [CPUIDFeatures(0x80000001, EDX, 26)]
+      GBP,
+      [Description("RDTSCP and IA32_TSC_AUX")]
+      [CPUIDFeatures(0x80000001, EDX, 27)]
+      RDTSCP,
+      [Description("Intel 64 Architecture available")]
+      [CPUIDFeatures(0x80000001, EDX, 29)]
+      INTEL64,
+      [Description("Invariant TSC Available")]
+      [CPUIDFeatures(0x80000007, EDX, 8)]
+      InvariantTSC,
+
+    }    
   }
 }

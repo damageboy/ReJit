@@ -18,8 +18,9 @@ namespace HackJit
       TestBSR16();
       TestBSR32();
       TestBSR64();
-      
-      if (CPUID.POPCNTSupported) {
+
+      if (CPUID.ISSupported(CPUID.CPUIDFeature.POPCNT))
+      {
         TestPOPCNT16();
         TestPOPCNT32();
         TestPOPCNT64();
@@ -27,7 +28,7 @@ namespace HackJit
         Console.WriteLine("POPCNT not supported, skipping");
 
       TestRDTSC();
-      if (CPUID.RDTSCPSupported)
+      if (CPUID.ISSupported(CPUID.CPUIDFeature.RDTSCP))
         TestRDTSCP();
       else
         Console.WriteLine("RDTSCP not supported, skipping");
@@ -145,7 +146,7 @@ namespace HackJit
 
     private static void TestRDTSCP()
     {
-      if (!CPUID.InvariantTSCSupported)
+      if (!CPUID.ISSupported(CPUID.CPUIDFeature.InvariantTSC))
         Console.WriteLine("Invariant TSC is not supported, RDTSC isn't reliable as a wall clock");
       const int LOOP = 1000000;
       var sw = Stopwatch.StartNew();
@@ -163,7 +164,7 @@ namespace HackJit
 
     private static void TestRDTSC()
     {
-      if (!CPUID.InvariantTSCSupported)
+      if (!CPUID.ISSupported(CPUID.CPUIDFeature.InvariantTSC))
         Console.WriteLine("Invariant TSC is not supported, RDTSC isn't reliable as a wall clock");
 
       const int LOOP = 1000000;
