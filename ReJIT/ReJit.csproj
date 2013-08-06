@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4CB3A565-5754-4BC2-A4AE-F78CF1263CC6}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ReJit</RootNamespace>
+    <AssemblyName>ReJit</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>True</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>False</Optimize>
+    <OutputPath>../bin/x86\debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>True</Optimize>
+    <OutputPath>../bin/x86\release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>True</DebugSymbols>
+    <OutputPath>../bin/x64\debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>False</Optimize>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>../bin/x64\release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>True</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CPUID.cs" />
+    <Compile Include="Intrinsincs.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Intrinsics\cpuid.map" />
+    <EmbeddedResource Include="Intrinsics\cpuid.o" />
+    <EmbeddedResource Include="Intrinsics\rdtsc.map" />
+    <EmbeddedResource Include="Intrinsics\rdtsc.o" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Intrinsics\bswap32.asm" />
+    <Content Include="Intrinsics\bswap64.asm" />
+    <Content Include="Intrinsics\bsf32.asm" />
+    <Content Include="Intrinsics\bsr32.asm" />
+    <Content Include="Intrinsics\bsf64.asm" />
+    <Content Include="Intrinsics\bsr64.asm" />
+    <Content Include="Intrinsics\bsf16.asm" />
+    <Content Include="Intrinsics\bsr16.asm" />
+    <Content Include="Intrinsics\popcnt16.asm" />
+    <Content Include="Intrinsics\popcnt64.asm" />
+    <Content Include="Intrinsics\popcnt32.asm" />
+    <Content Include="Intrinsics\rdtscp.asm" />
+    <Content Include="Intrinsics\cpuid.asm" />
+    <Content Include="Intrinsics\rdtsc.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Intrinsics\rdtscp.map" />
+    <EmbeddedResource Include="Intrinsics\rdtscp.o" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Intrinsics\bswap32.map" />
+    <EmbeddedResource Include="Intrinsics\bswap32.o" />
+    <EmbeddedResource Include="Intrinsics\bswap64.map" />
+    <EmbeddedResource Include="Intrinsics\bswap64.o" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Intrinsics\bsf32.map" />
+    <EmbeddedResource Include="Intrinsics\bsf32.o" />
+    <EmbeddedResource Include="Intrinsics\bsf64.map" />
+    <EmbeddedResource Include="Intrinsics\bsf64.o" />
+    <EmbeddedResource Include="Intrinsics\bsr32.map" />
+    <EmbeddedResource Include="Intrinsics\bsr32.o" />
+    <EmbeddedResource Include="Intrinsics\bsr64.map" />
+    <EmbeddedResource Include="Intrinsics\bsr64.o" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Intrinsics\bsf16.map" />
+    <EmbeddedResource Include="Intrinsics\bsf16.o" />
+    <EmbeddedResource Include="Intrinsics\bsr16.map" />
+    <EmbeddedResource Include="Intrinsics\bsr16.o" />
+    <EmbeddedResource Include="Intrinsics\popcnt16.map" />
+    <EmbeddedResource Include="Intrinsics\popcnt16.o" />
+    <EmbeddedResource Include="Intrinsics\popcnt32.map" />
+    <EmbeddedResource Include="Intrinsics\popcnt32.o" />
+    <EmbeddedResource Include="Intrinsics\popcnt64.map" />
+    <EmbeddedResource Include="Intrinsics\popcnt64.o" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

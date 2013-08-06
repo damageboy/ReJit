@@ -4,22 +4,22 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace HackJit
+namespace ReJit
 {
   [AttributeUsage(AttributeTargets.Method)]
-  internal class HackJitAttribute : Attribute
+  internal class ReJitAttribute : Attribute
   {
-    internal HackJitAttribute(string replacement)
+    internal ReJitAttribute(string replacement)
     {
       Replacement = replacement;
     }
     internal string Replacement { get; private set; }
   }
 
-  static class JIT
+  public static class Intrinsincs
   {
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bswap32")]
+    [ReJit("bswap32")]
     public static int BSWAP32S(int bige)
     {
       BSWAP32S(bige);
@@ -31,7 +31,7 @@ namespace HackJit
       return BSWAP32S(bige);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bswap32")]
+    [ReJit("bswap32")]
     public static uint BSWAP32U(uint bige)
     {
       BSWAP32U(bige);
@@ -43,7 +43,7 @@ namespace HackJit
       return BSWAP32U(bige);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bswap64")]
+    [ReJit("bswap64")]
     public static long BSWAP64S(long bige, byte dummy = 0x66)
     {
       BSWAP64S(bige);
@@ -55,7 +55,7 @@ namespace HackJit
       return BSWAP64S(bige);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bswap64")]
+    [ReJit("bswap64")]
     public static ulong BSWAP64U(ulong bige, byte dummy = 0x66)
     {
       BSWAP64U(bige);
@@ -67,7 +67,7 @@ namespace HackJit
       return BSWAP64U(bige);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsf16")]
+    [ReJit("bsf16")]
     public static int BSF(short test)
     {
       BSF(test);
@@ -79,8 +79,8 @@ namespace HackJit
       return BSF(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsf16")]
-    public static uint BSF(ushort test)
+    [ReJit("bsf16")]
+    public static int BSF(ushort test)
     {
       BSF(test);
       BSF(test);
@@ -91,7 +91,7 @@ namespace HackJit
       return BSF(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsr16")]
+    [ReJit("bsr16")]
     public static int BSR(short test)
     {
       BSR(test);
@@ -103,8 +103,8 @@ namespace HackJit
       return BSR(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsr16")]
-    public static uint BSR(ushort test)
+    [ReJit("bsr16")]
+    public static int BSR(ushort test)
     {
       BSR(test);
       BSR(test);
@@ -115,7 +115,7 @@ namespace HackJit
       return BSR(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsf32")]
+    [ReJit("bsf32")]
     public static int BSF(int test)
     {
       BSF(test);
@@ -127,8 +127,8 @@ namespace HackJit
       return BSF(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsf32")]
-    public static uint BSF(uint test)
+    [ReJit("bsf32")]
+    public static int BSF(uint test)
     {
       BSF(test);
       BSF(test);
@@ -139,7 +139,7 @@ namespace HackJit
       return BSF(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsr32")]
+    [ReJit("bsr32")]
     public static int BSR(int test)
     {
       BSR(test);
@@ -151,8 +151,8 @@ namespace HackJit
       return BSR(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsr32")]
-    public static uint BSR(uint test)
+    [ReJit("bsr32")]
+    public static int BSR(uint test)
     {
       BSR(test);
       BSR(test);
@@ -163,7 +163,7 @@ namespace HackJit
       return BSR(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsf64")]
+    [ReJit("bsf64")]
     public static int BSF(long test)
     {
       BSF(test);
@@ -175,7 +175,7 @@ namespace HackJit
       return BSF(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsf64")]
+    [ReJit("bsf64")]
     public static uint BSF(ulong test)
     {
       BSF(test);
@@ -187,7 +187,7 @@ namespace HackJit
       return BSF(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsr64")]
+    [ReJit("bsr64")]
     public static int BSR(long test)
     {
       BSR(test);
@@ -199,7 +199,7 @@ namespace HackJit
       return BSR(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("bsr64")]
+    [ReJit("bsr64")]
     public static uint BSR(ulong test)
     {
       BSR(test);
@@ -211,7 +211,7 @@ namespace HackJit
       return BSR(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("popcnt16")]
+    [ReJit("popcnt16")]
     public static int POPCNT(short test)
     {
       POPCNT(test);
@@ -223,8 +223,8 @@ namespace HackJit
       return POPCNT(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("popcnt16")]
-    public static uint POPCNT(ushort test)
+    [ReJit("popcnt16")]
+    public static int POPCNT(ushort test)
     {
       POPCNT(test);
       POPCNT(test);
@@ -235,7 +235,7 @@ namespace HackJit
       return POPCNT(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("popcnt32")]
+    [ReJit("popcnt32")]
     public static int POPCNT(int test)
     {
       POPCNT(test);
@@ -247,8 +247,8 @@ namespace HackJit
       return POPCNT(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("popcnt32")]
-    public static uint POPCNT(uint test)
+    [ReJit("popcnt32")]
+    public static int POPCNT(uint test)
     {
       POPCNT(test);
       POPCNT(test);
@@ -259,7 +259,7 @@ namespace HackJit
       return POPCNT(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("popcnt64")]
+    [ReJit("popcnt64")]
     public static int POPCNT(long test)
     {
       POPCNT(test);
@@ -271,8 +271,8 @@ namespace HackJit
       return POPCNT(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("popcnt64")]
-    public static uint POPCNT(ulong test)
+    [ReJit("popcnt64")]
+    public static int POPCNT(ulong test)
     {
       POPCNT(test);
       POPCNT(test);
@@ -283,7 +283,7 @@ namespace HackJit
       return POPCNT(test);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("rdtscp")]
+    [ReJit("rdtscp")]
     public static ulong RDTSCP(int dummy = 666)
     {
       RDTSCP(dummy);
@@ -295,7 +295,7 @@ namespace HackJit
       return RDTSCP(dummy);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("cpuid")]
+    [ReJit("cpuid")]
     public static void CPUID(ref uint eax, out uint ebx, out uint ecx, out uint edx, uint dummy1 = 66, ushort dummy2 = 77, byte dummy3 = 88)
     {
       CPUID(ref eax, out ebx, out ecx, out edx);
@@ -319,7 +319,7 @@ namespace HackJit
       CPUID(ref eax, out ebx, out ecx, out edx);
     }
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [HackJit("rdtsc")]
+    [ReJit("rdtsc")]
     public static ulong RDTSC(int dummy1 = 666, byte dummy2 = 66)
     {
       RDTSC();
@@ -334,7 +334,7 @@ namespace HackJit
     private static byte[] GetOpcodes(string i)
     {
       var assembly = Assembly.GetExecutingAssembly();
-      var jitStream = assembly.GetManifestResourceStream("HackJit.Intrinsics." + i + ".o");
+      var jitStream = assembly.GetManifestResourceStream("ReJit.Intrinsics." + i + ".o");
       var bytes = new byte[jitStream.Length];
       jitStream.Read(bytes, 0, bytes.Length);
       return bytes;
@@ -342,10 +342,10 @@ namespace HackJit
 
     public static void Init()
     {
-      var candidates = typeof(JIT).GetMethods(BindingFlags.Static | BindingFlags.Public);
+      var candidates = typeof(Intrinsincs).GetMethods(BindingFlags.Static | BindingFlags.Public);
 
       foreach (var m in candidates) {
-        var hja = (HackJitAttribute) m.GetCustomAttributes(typeof(HackJitAttribute), false).SingleOrDefault();
+        var hja = (ReJitAttribute) m.GetCustomAttributes(typeof(ReJitAttribute), false).SingleOrDefault();
         if (hja == null)
           continue;
         var mh = m.MethodHandle;

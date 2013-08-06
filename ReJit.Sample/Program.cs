@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Diagnostics;
+using ReJit;
 
 namespace HackJit
 {
   class Program
   {
     public const int MHZ = 2400000;
-    static void Main(string[] args)
+    static public void Main(string[] args)
     {
-      JIT.Init();
+      Intrinsincs.Init();
       TestCPUID();
       TestBSWAP32();
       //TestBSWAP64();
@@ -40,15 +41,15 @@ namespace HackJit
     {
       var test = (ushort) 0x0100U;
 
-      var location = JIT.BSF(test);
+      var location = Intrinsincs.BSF(test);
       Console.WriteLine("BSF16 {0}", location);
     }
 
     private static void TestBSF32()
     {
       var test = 0x00000100U;
-      
-      var location = JIT.BSF(test);
+
+      var location = Intrinsincs.BSF(test);
       Console.WriteLine("BSF32 {0}", location);
     }
 
@@ -56,7 +57,7 @@ namespace HackJit
     {
       var test = 0x00000100U;
 
-      var location = JIT.BSF(test);
+      var location = Intrinsincs.BSF(test);
       Console.WriteLine("BSF64 {0}", location);
     }
 
@@ -64,7 +65,7 @@ namespace HackJit
     {
       var test = (ushort)0x0100U;
 
-      var location = JIT.BSR(test);
+      var location = Intrinsincs.BSR(test);
       Console.WriteLine("BSR16 {0}", location);
     }
 
@@ -72,7 +73,7 @@ namespace HackJit
     {
       var test = 0x00000100U;
 
-      var location = JIT.BSR(test);
+      var location = Intrinsincs.BSR(test);
       Console.WriteLine("BSR32 {0}", location);
     }
 
@@ -80,33 +81,11 @@ namespace HackJit
     {
       var test = 0x00000100U;
 
-      var location = JIT.BSR(test);
+      var location = Intrinsincs.BSR(test);
       Console.WriteLine("BSR32 {0}", location);
     }
 
-    private static void TestPOPCNT16()
-    {
-      var test = (ushort) 0x0F0FU;
 
-      var location = JIT.POPCNT(test);
-      Console.WriteLine("POPCNT16 {0}", location);
-    }
-
-    private static void TestPOPCNT32()
-    {
-      var test = 0x0F0F0F0FU;
-
-      var location = JIT.POPCNT(test);
-      Console.WriteLine("POPCNT32 {0}", location);
-    }
-
-    private static void TestPOPCNT64()
-    {
-      var test = 0x0F0F0F0F0F0F0F0FLU;
-
-      var location = JIT.POPCNT(test);
-      Console.WriteLine("POPCNT64 {0}", location);
-    }
 
 
     private unsafe static void TestCPUID()
@@ -114,8 +93,8 @@ namespace HackJit
       uint eax, ebx, ecx, edx;
       eax = 0x00;
       ebx = ecx = edx = 0x00;
-    
-      JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+
+      Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
       var x = stackalloc sbyte[12];
       var p = (uint*) x;
       p[0] = ebx;
@@ -131,7 +110,7 @@ namespace HackJit
     {
       var before = 0x01020304U;
       Console.WriteLine("Before BSWAP32 0x{0:X8}", before);
-      var after = JIT.BSWAP32U(before);      
+      var after = Intrinsincs.BSWAP32U(before);      
       Console.WriteLine("After  BSWAP32 0x{0:X8}", after);
     }
 
@@ -140,7 +119,7 @@ namespace HackJit
       Debugger.Break();
       var before = 0x1122334455667788U;
       Console.WriteLine("Before BSWAP64 0x{0:X8}", before);
-      var after = JIT.BSWAP64U(before);            
+      var after = Intrinsincs.BSWAP64U(before);            
       Console.WriteLine("After  BSWAP64 0x{0:X8}", after);
     }
 
@@ -150,11 +129,11 @@ namespace HackJit
         Console.WriteLine("Invariant TSC is not supported, RDTSC isn't reliable as a wall clock");
       const int LOOP = 1000000;
       var sw = Stopwatch.StartNew();
-      var start = JIT.RDTSCP();
+      var start = Intrinsincs.RDTSCP();
 
       for (var i = 0; i < LOOP; i++)
-        JIT.RDTSCP();
-      var end = JIT.RDTSCP();
+        Intrinsincs.RDTSCP();
+      var end = Intrinsincs.RDTSCP();
       sw.Stop();    
       Console.WriteLine("SW:     {0}ms",sw.ElapsedMilliseconds);
       Console.WriteLine("RDTSCP: {0}ms", (end - start) / MHZ);
@@ -170,10 +149,10 @@ namespace HackJit
       const int LOOP = 1000000;
 
       var sw = Stopwatch.StartNew();
-      var start = JIT.RDTSC();
+      var start = Intrinsincs.RDTSC();
       for (var i = 0; i < LOOP; i++)
-        JIT.RDTSC();
-      var end = JIT.RDTSC();
+        Intrinsincs.RDTSC();
+      var end = Intrinsincs.RDTSC();
       sw.Stop();    
       Console.WriteLine("SW:    {0}ms", sw.ElapsedMilliseconds);
       Console.WriteLine("RDTSC: {0}ms", (end - start) / MHZ);

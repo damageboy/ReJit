@@ -2,10 +2,8 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 
-namespace HackJit
+namespace ReJit
 {
   public class CPUID
   {
@@ -13,7 +11,7 @@ namespace HackJit
     static uint _maxSupported;
     static uint _maxExtendedSupported;
     static Dictionary<uint, uint[]> _values;
-    private static Dictionary<CPUIDFeature, CPUIDFeaturesAttribute> _fetureInfo;
+    private static readonly Dictionary<CPUIDFeature, CPUIDFeaturesAttribute> _featureInfo;
 
 
     static CPUID() 
@@ -22,17 +20,17 @@ namespace HackJit
       eax = 0x00;
       ebx = ecx = edx = 0x00;
       _values = new Dictionary<uint, uint[]>();
-      JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+      Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
       _maxSupported = eax;
       eax = 0x80000000;
-      JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+      Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
       _maxExtendedSupported = eax;
 
       for (var i = 0U; i <= _maxSupported; i++)
       {
         eax = i;
         ebx = ecx = edx = 0x00;
-        JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+        Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
         _values[i] = new [] { eax, ebx, ecx, edx };
       }
 
@@ -40,7 +38,7 @@ namespace HackJit
       {
         eax = i;
         ebx = ecx = edx = 0x00;
-        JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+        Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
         _values[i] = new[] { eax, ebx, ecx, edx };
       }
 
@@ -51,7 +49,7 @@ namespace HackJit
           Feature = (CPUIDFeature) Enum.Parse(typeof(CPUIDFeature), m.Name),
           Attr = attr
         };
-      _fetureInfo = q.ToDictionary(x => x.Feature, x => x.Attr);
+      _featureInfo = q.ToDictionary(x => x.Feature, x => x.Attr);
     }
 
     public unsafe string VendorString
@@ -62,7 +60,7 @@ namespace HackJit
           eax = 0x00;
           ebx = ecx = edx = 0x00;
 
-          JIT.CPUID(ref eax, out ebx, out ecx, out edx);
+          Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
           var x = stackalloc sbyte[12];
           var p = (uint*)x;
           p[0] = _values[0][EBX];
@@ -78,7 +76,7 @@ namespace HackJit
 
     public static bool ISSupported(CPUIDFeature feature)
     {
-      var info = _fetureInfo[feature];
+      var info = _featureInfo[feature];
       return (_values[info.Function][info.Register] & (1U << info.Bit)) == 1;
     }
 
