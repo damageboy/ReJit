@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DiStorm;
 
 namespace ReJit
 {
@@ -318,6 +320,81 @@ namespace ReJit
       CPUID(ref eax, out ebx, out ecx, out edx);
       CPUID(ref eax, out ebx, out ecx, out edx);
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    //[HackJit("cpuid")]
+    public static void CPUIDNG(ref uint eax, out uint ebx, out uint ecx, out uint edx, uint dummy1 = 66, ushort dummy2 = 77, byte dummy3 = 88)
+    {
+      eax = ebx = ecx = edx = 0;
+
+      var defaults =
+          typeof(Intrinsincs).GetMethod("CPUIDNG")
+              .GetParameters()
+              .Where(prm => prm.IsOptional)
+              .Select(prm => new { prm.ParameterType, prm.RawDefaultValue }).ToArray();
+
+      Console.WriteLine("looking for {0}", String.Join(", ", defaults.Select(x => x.RawDefaultValue)));
+
+      var sf = new StackFrame(1);
+      var m = sf.GetMethod();
+      var mh = m.MethodHandle;
+      var p = mh.GetFunctionPointer();
+      var offset = sf.GetNativeOffset();
+      var copy = new byte[offset];
+      Marshal.Copy(p, copy, 0, offset);
+
+      var ci = new CodeInfo((long)p, copy, DecodeType.Decode64Bits, 0);
+
+      var dc = new DecomposedResult(100);
+
+      DiStorm3.Decompose(ci, dc);
+
+      FindParam(dc, Register.R_RCX);
+      FindParam(dc, Register.R_RDX);
+      FindParam(dc, Register.R_R8);
+      FindParam(dc, Register.R_R9);
+
+      Console.WriteLine(offset);
+    }
+
+    private static void FindParam(DecomposedResult dc, int pn)
+    {
+      Register r;
+      switch (pn)
+      {
+        case 0:
+          r = Register.R_RCX;
+          break;
+        case 1:
+          r = Register.R_RDX;
+          break;
+        case 2:
+          r = Register.R_R8;
+          break;
+        case 3:
+          r = Register.R_R9;
+          break;
+      }
+    }
+
+    private static void ParamToRegister(int pn)
+    {
+    }
+
+    private static void FindParam(DecomposedResult dc, Register reg)
+    {
+      foreach (var x in dc.Instructions.Reverse())
+      {
+        if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
+          continue;
+        var op = x.Operands[0];
+        if (op.Type != OperandType.Reg || op.Register != reg)
+          continue;
+        var s = String.Format("{0:X} {1} {2}", x.Address.ToInt64(), x.Opcode, op.Register);
+        Console.WriteLine(s);
+      }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("rdtsc")]
     public static ulong RDTSC(int dummy1 = 666, byte dummy2 = 66)

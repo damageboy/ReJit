@@ -9,6 +9,7 @@ namespace HackJit
     public const int MHZ = 2400000;
     static public void Main(string[] args)
     {
+      
       Intrinsincs.Init();
       TestCPUID();
       TestBSWAP32();
@@ -19,14 +20,6 @@ namespace HackJit
       TestBSR16();
       TestBSR32();
       TestBSR64();
-
-      if (CPUID.ISSupported(CPUID.CPUIDFeature.POPCNT))
-      {
-        TestPOPCNT16();
-        TestPOPCNT32();
-        TestPOPCNT64();
-      } else
-        Console.WriteLine("POPCNT not supported, skipping");
 
       TestRDTSC();
       if (CPUID.ISSupported(CPUID.CPUIDFeature.RDTSCP))
@@ -93,6 +86,8 @@ namespace HackJit
       uint eax, ebx, ecx, edx;
       eax = 0x00;
       ebx = ecx = edx = 0x00;
+
+      Intrinsincs.CPUIDNG(ref eax, out ebx, out ecx, out edx);
 
       Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
       var x = stackalloc sbyte[12];
