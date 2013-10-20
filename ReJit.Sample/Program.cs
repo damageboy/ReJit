@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
-using ReJit;
 
-namespace HackJit
+namespace ReJit.Sample
 {
   class Program
   {
     public const int MHZ = 2400000;
+
     static public void Main(string[] args)
     {
-      
       Intrinsincs.Init();
       TestCPUID();
       TestBSWAP32();
@@ -26,8 +25,6 @@ namespace HackJit
         TestRDTSCP();
       else
         Console.WriteLine("RDTSCP not supported, skipping");
-
-      
     }
 
     private static void TestBSF16()
@@ -78,9 +75,6 @@ namespace HackJit
       Console.WriteLine("BSR32 {0}", location);
     }
 
-
-
-
     private unsafe static void TestCPUID()
     {
       uint eax, ebx, ecx, edx;
@@ -105,7 +99,7 @@ namespace HackJit
     {
       var before = 0x01020304U;
       Console.WriteLine("Before BSWAP32 0x{0:X8}", before);
-      var after = Intrinsincs.BSWAP32U(before);      
+      var after = Intrinsincs.BSWAP32U(before);
       Console.WriteLine("After  BSWAP32 0x{0:X8}", after);
     }
 
@@ -114,7 +108,7 @@ namespace HackJit
       Debugger.Break();
       var before = 0x1122334455667788U;
       Console.WriteLine("Before BSWAP64 0x{0:X8}", before);
-      var after = Intrinsincs.BSWAP64U(before);            
+      var after = Intrinsincs.BSWAP64U(before);
       Console.WriteLine("After  BSWAP64 0x{0:X8}", after);
     }
 
@@ -129,12 +123,11 @@ namespace HackJit
       for (var i = 0; i < LOOP; i++)
         Intrinsincs.RDTSCP();
       var end = Intrinsincs.RDTSCP();
-      sw.Stop();    
+      sw.Stop();
       Console.WriteLine("SW:     {0}ms",sw.ElapsedMilliseconds);
       Console.WriteLine("RDTSCP: {0}ms", (end - start) / MHZ);
       Console.WriteLine("RDTSCP: {0}cycles", (end - start) / LOOP);
     }
-
 
     private static void TestRDTSC()
     {
@@ -148,7 +141,7 @@ namespace HackJit
       for (var i = 0; i < LOOP; i++)
         Intrinsincs.RDTSC();
       var end = Intrinsincs.RDTSC();
-      sw.Stop();    
+      sw.Stop();
       Console.WriteLine("SW:    {0}ms", sw.ElapsedMilliseconds);
       Console.WriteLine("RDTSC: {0}ms", (end - start) / MHZ);
       Console.WriteLine("Each RDTSC: {0}cycles", (end - start) / LOOP);
