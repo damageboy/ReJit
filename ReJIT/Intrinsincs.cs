@@ -1,4 +1,5 @@
-﻿using DiStorm;
+﻿using System.Linq.Expressions;
+using DiStorm;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -167,30 +168,94 @@ namespace ReJit
 
       // The call is 5 bytes, that's a constant
       var availableSpace = dc.Instructions.Last().Size;
-      var mem = (byte *) p.ToPointer() + offset;
+      var memStart = (byte *) p.ToPointer() + offset;
       // Sometimes the Jit pisses nops on us, so we're happy to use it
-      while (*(mem++) == 0x90)
+      while (*(memStart++) == 0x90)
         availableSpace++;
-      mem = (byte *) p.ToPointer() + offset - 5;
+      memStart = (byte *) p.ToPointer() + offset - 5;
+      var memEnd = memStart;
 
       if (availableSpace >= replacement.Length) {
-        ShoveBytes(mem, replacement);
+        ShoveBytesPaddedWithNOPs(memStart, availableSpace, replacement);
         return;
       }
 
-      foreach (var rp in registerParams)
-        FindParam(dc, rp);
+      byte *paramsMemStart = null;
+      byte* paramsMemEnd = null;
 
-      foreach (var sp in slackParams)
-        FindSlackParam(dc, sp);
+      byte* slackMemStart = null;
+      byte* slackMemEnd = null;
 
-      Console.WriteLine(offset);
+      var targetsLeft = registerParams.Length + slackParams.Length;
+
+      // We go over the existing instructions in reverse one by one, until we find all of our relevant
+      // bits, we skip the first one since it's the CALL that brought us here
+      foreach (var x in dc.Instructions.Reverse().Skip(1)) {
+        foreach (var reg in registerParams) {
+          if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
+            continue;
+          var op = x.Operands[0];
+          if (op.Type != OperandType.Reg || op.Register != reg)
+            continue;
+          Console.WriteLine("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
+          if (paramsMemStart == null && paramsMemEnd == null)
+            paramsMemStart = paramsMemEnd = memStart;
+          memStart -= x.Size;
+          paramsMemStart -= x.Size;
+          targetsLeft--;
+          break;
+        }
+        foreach (var reg in slackParams) {
+          if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
+            continue;
+          var op = x.Operands[1];
+          if (op.Type != OperandType.Imm || !CompareImmToObject(reg.RawDefaultValue, x.Imm))
+            continue;          
+          Console.WriteLine("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode, x.Imm.Imm);
+          if (slackMemEnd == null && slackMemStart == null)
+            slackMemEnd = slackMemStart = memStart;
+          memStart -= x.Size;
+          slackMemStart -= x.Size;
+          targetsLeft--;
+          break;
+        }
+        if (targetsLeft == 0)
+          break;      
+      }
+      if (slackMemEnd != paramsMemStart)
+        throw new Exception("slack and params are overlapping");
+      var paramsLen = (int) ((ulong)paramsMemEnd - (ulong)paramsMemStart);
+      var slackLen = (int) ((ulong)slackMemEnd - (ulong)slackMemStart);
+      Console.WriteLine("Mem is {0} bytes (0x{1:X}-0x{2:X}", (ulong)memEnd - (ulong)memStart, (ulong)memStart, (ulong)memEnd);
+      Console.WriteLine("Params is {0} bytes (0x{1:X}-0x{2:X}", paramsLen, (ulong)paramsMemStart, (ulong)paramsMemEnd);
+      Console.WriteLine("Slack is {0} bytes (0x{1:X}-0x{2:X}", slackLen, (ulong)slackMemStart, (ulong)slackMemEnd);
+
+      ShoveBytes(slackMemStart, paramsLen, paramsMemStart);
+      availableSpace += slackLen;
+      if (availableSpace < replacement.Length) 
+        throw new Exception("Cannot re-jit since there's not enough space for the replacement opcodes");
+      ShoveBytesPaddedWithNOPs(slackMemStart + paramsLen, availableSpace, replacement);           
     }
 
-    private static unsafe void ShoveBytes(byte* mem, byte[] replacement)
+    private static unsafe void ShoveBytesPaddedWithNOPs(byte* dst, int length, byte[] replacement)
     {
+      if (replacement.Length > length)
+        throw new Exception("Not enough room for replacement");
       foreach (var r in replacement)
-        *(mem++) = r;
+        *(dst++) = r;
+
+      if (replacement.Length == length)
+        return;
+
+      var i = length - replacement.Length;
+      while(i-- > 0)
+        *(dst++) = 0x90;
+    }
+
+    private static unsafe void ShoveBytes(byte* dst, int length, byte *src)
+    {
+      for (var i = 0; i < length; i++)
+        *(dst++) = src[i];
     }
 
     public static IntPtr GetMethodAddress(MethodBase method)
@@ -252,36 +317,6 @@ namespace ReJit
             return ((RuntimeMethodHandle)fieldInfo.GetValue(method)).Value;
         }
         return method.MethodHandle.Value;
-    }
-
-    private static void FindParam(DecomposedResult dc, Register reg)
-    {
-      foreach (var x in dc.Instructions.Reverse())
-      {
-        if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
-          continue;
-        var op = x.Operands[0];
-        if (op.Type != OperandType.Reg || op.Register != reg)
-          continue;
-        var s = String.Format("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
-        Console.WriteLine(s);
-        return;
-      }
-    }
-
-    private static void FindSlackParam(DecomposedResult dc, BufferParam reg)
-    {
-      foreach (var x in dc.Instructions.Reverse())
-      {
-        if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
-          continue;
-        var op = x.Operands[1];
-        if (op.Type != OperandType.Imm || !CompareImmToObject(reg.RawDefaultValue, x.Imm))
-          continue;
-        var s = String.Format("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode, x.Imm.Imm);
-        Console.WriteLine(s);
-        return;
-      }
     }
 
     private static bool CompareImmToObject(object rawDefaultValue, DecomposedInst.ImmVariant imm)
