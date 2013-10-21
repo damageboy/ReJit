@@ -81,8 +81,6 @@ namespace ReJit.Sample
       eax = 0x00;
       ebx = ecx = edx = 0x00;
 
-      Intrinsincs.CPUIDNG(ref eax, out ebx, out ecx, out edx);
-
       Intrinsincs.CPUID(ref eax, out ebx, out ecx, out edx);
       var x = stackalloc sbyte[12];
       var p = (uint*) x;

@@ -77,58 +77,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Intrinsics\cpuid.map" />
-    <EmbeddedResource Include="Intrinsics\cpuid.o" />
-    <EmbeddedResource Include="Intrinsics\rdtsc.map" />
-    <EmbeddedResource Include="Intrinsics\rdtsc.o" />
+    <None Include="Intrinsics\intrinsincs.asm" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Intrinsics\bswap32.asm" />
-    <Content Include="Intrinsics\bswap64.asm" />
-    <Content Include="Intrinsics\bsf32.asm" />
-    <Content Include="Intrinsics\bsr32.asm" />
-    <Content Include="Intrinsics\bsf64.asm" />
-    <Content Include="Intrinsics\bsr64.asm" />
-    <Content Include="Intrinsics\bsf16.asm" />
-    <Content Include="Intrinsics\bsr16.asm" />
-    <Content Include="Intrinsics\popcnt16.asm" />
-    <Content Include="Intrinsics\popcnt64.asm" />
-    <Content Include="Intrinsics\popcnt32.asm" />
-    <Content Include="Intrinsics\rdtscp.asm" />
-    <Content Include="Intrinsics\cpuid.asm" />
-    <Content Include="Intrinsics\rdtsc.asm" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Intrinsics\rdtscp.map" />
-    <EmbeddedResource Include="Intrinsics\rdtscp.o" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Intrinsics\bswap32.map" />
-    <EmbeddedResource Include="Intrinsics\bswap32.o" />
-    <EmbeddedResource Include="Intrinsics\bswap64.map" />
-    <EmbeddedResource Include="Intrinsics\bswap64.o" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Intrinsics\bsf32.map" />
-    <EmbeddedResource Include="Intrinsics\bsf32.o" />
-    <EmbeddedResource Include="Intrinsics\bsf64.map" />
-    <EmbeddedResource Include="Intrinsics\bsf64.o" />
-    <EmbeddedResource Include="Intrinsics\bsr32.map" />
-    <EmbeddedResource Include="Intrinsics\bsr32.o" />
-    <EmbeddedResource Include="Intrinsics\bsr64.map" />
-    <EmbeddedResource Include="Intrinsics\bsr64.o" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Intrinsics\bsf16.map" />
-    <EmbeddedResource Include="Intrinsics\bsf16.o" />
-    <EmbeddedResource Include="Intrinsics\bsr16.map" />
-    <EmbeddedResource Include="Intrinsics\bsr16.o" />
-    <EmbeddedResource Include="Intrinsics\popcnt16.map" />
-    <EmbeddedResource Include="Intrinsics\popcnt16.o" />
-    <EmbeddedResource Include="Intrinsics\popcnt32.map" />
-    <EmbeddedResource Include="Intrinsics\popcnt32.o" />
-    <EmbeddedResource Include="Intrinsics\popcnt64.map" />
-    <EmbeddedResource Include="Intrinsics\popcnt64.o" />
+    <EmbeddedResource Include="Intrinsics\intrinsincs.map" />
+    <EmbeddedResource Include="Intrinsics\intrinsincs.o" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

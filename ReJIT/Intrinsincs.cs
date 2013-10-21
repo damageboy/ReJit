@@ -2,12 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
 using OperandType = DiStorm.OperandType;
 
 namespace ReJit
@@ -25,350 +26,126 @@ namespace ReJit
 
   public static class Intrinsincs
   {
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [ReJit("bswap32")]
-    public static int BSWAP32S(int bige)
-    {
-      BSWAP32S(bige);
-      BSWAP32S(bige);
-      BSWAP32S(bige);
-      BSWAP32S(bige);
-      BSWAP32S(bige);
-      BSWAP32S(bige);
-      return BSWAP32S(bige);
-    }
+    private static readonly Dictionary<string, byte[]> _intrinsincs = new Dictionary<string, byte[]>();
+
+    #region Stubs
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bswap32")]
-    public static uint BSWAP32U(uint bige)
-    {
-      BSWAP32U(bige);
-      BSWAP32U(bige);
-      BSWAP32U(bige);
-      BSWAP32U(bige);
-      BSWAP32U(bige);
-      BSWAP32U(bige);
-      return BSWAP32U(bige);
-    }
+    public static int BSWAP32S(int bige) { DoReJit(); return 0; }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    [ReJit("bswap32")]
+    public static uint BSWAP32U(uint bige) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bswap64")]
-    public static long BSWAP64S(long bige, byte dummy = 0x66)
-    {
-      BSWAP64S(bige);
-      BSWAP64S(bige);
-      BSWAP64S(bige);
-      BSWAP64S(bige);
-      BSWAP64S(bige);
-      BSWAP64S(bige);
-      return BSWAP64S(bige);
-    }
+    public static long BSWAP64S(long bige, byte dummy = 0x66) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bswap64")]
-    public static ulong BSWAP64U(ulong bige, byte dummy = 0x66)
-    {
-      BSWAP64U(bige);
-      BSWAP64U(bige);
-      BSWAP64U(bige);
-      BSWAP64U(bige);
-      BSWAP64U(bige);
-      BSWAP64U(bige);
-      return BSWAP64U(bige);
+    public static ulong BSWAP64U(ulong bige, byte dummy = 0x66) { DoReJit(); return 0;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsf16")]
-    public static int BSF(short test)
-    {
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      return BSF(test);
-    }
+    public static int BSF(short test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsf16")]
-    public static int BSF(ushort test)
-    {
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      return BSF(test);
-    }
+    public static int BSF(ushort test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsr16")]
-    public static int BSR(short test)
-    {
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      return BSR(test);
-    }
+    public static int BSR(short test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsr16")]
-    public static int BSR(ushort test)
-    {
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      return BSR(test);
-    }
+    public static int BSR(ushort test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsf32")]
-    public static int BSF(int test)
-    {
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      return BSF(test);
-    }
+    public static int BSF(int test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsf32")]
-    public static int BSF(uint test)
-    {
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      return BSF(test);
-    }
+    public static int BSF(uint test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsr32")]
-    public static int BSR(int test)
-    {
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      return BSR(test);
-    }
+    public static int BSR(int test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsr32")]
-    public static int BSR(uint test)
-    {
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      return BSR(test);
-    }
+    public static int BSR(uint test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsf64")]
-    public static int BSF(long test)
-    {
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      return BSF(test);
-    }
+    public static int BSF(long test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsf64")]
-    public static uint BSF(ulong test)
-    {
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      BSF(test);
-      return BSF(test);
-    }
+    public static uint BSF(ulong test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsr64")]
-    public static int BSR(long test)
-    {
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      return BSR(test);
-    }
+    public static int BSR(long test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("bsr64")]
-    public static uint BSR(ulong test)
-    {
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      BSR(test);
-      return BSR(test);
-    }
+    public static uint BSR(ulong test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("popcnt16")]
-    public static int POPCNT(short test)
-    {
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      return POPCNT(test);
-    }
+    public static int POPCNT(short test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("popcnt16")]
-    public static int POPCNT(ushort test)
-    {
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      return POPCNT(test);
-    }
+    public static int POPCNT(ushort test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("popcnt32")]
-    public static int POPCNT(int test)
-    {
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      return POPCNT(test);
-    }
+    public static int POPCNT(int test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("popcnt32")]
-    public static int POPCNT(uint test)
-    {
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      return POPCNT(test);
-    }
+    public static int POPCNT(uint test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("popcnt64")]
-    public static int POPCNT(long test)
-    {
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      return POPCNT(test);
-    }
+    public static int POPCNT(long test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("popcnt64")]
-    public static int POPCNT(ulong test)
-    {
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      POPCNT(test);
-      return POPCNT(test);
-    }
+    public static int POPCNT(ulong test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("rdtscp")]
-    public static ulong RDTSCP(int dummy = 666)
-    {
-      RDTSCP(dummy);
-      RDTSCP(dummy);
-      RDTSCP(dummy);
-      RDTSCP(dummy);
-      RDTSCP(dummy);
-      RDTSCP(dummy);
-      return RDTSCP(dummy);
-    }
+    public static ulong RDTSCP(int dummy = 666) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [ReJit("cpuid")]
+    [ReJit("_cpuid")]
     public static void CPUID(ref uint eax, out uint ebx, out uint ecx, out uint edx, uint dummy1 = 66, ushort dummy2 = 77, byte dummy3 = 88)
-    {
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-      CPUID(ref eax, out ebx, out ecx, out edx);
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [ReJit("cpuid")]
-    public static void CPUIDNG(ref uint eax, out uint ebx, out uint ecx, out uint edx, uint dummy1 = 66, ushort dummy2 = 77, byte dummy3 = 88)
     {
       // Make the compiler happy
       eax = ebx = ecx = edx = 0;
       DoReJit();
     }
 
-    private static void DoReJit()
+    #endregion Stubs
+
+    private static unsafe void DoReJit()
     {
       Register[] registerParams;
       BufferParam[] slackParams;
-      GetParameterCounts(out registerParams, out slackParams);
+      byte[] replacement;
+      GetRejitProperties(out registerParams, out slackParams, out replacement);
 
       var sf = new StackFrame(2);
       var m = sf.GetMethod();
+
       var mh = m.MethodHandle;
       var p = mh.GetFunctionPointer();
-      //var p = GetMethodAddress(m);
       var offset = sf.GetNativeOffset();
     replay:
       var copy = new byte[offset];
@@ -379,10 +156,26 @@ namespace ReJit
 
       // Attempt to detect and handle edit-and-continue crap while debugging
       var ins = dc.Instructions[0];
-      if (ins.Opcode == Opcode.JMP && ins.Operands[0].Type == OperandType.Pc)
-      {
+      if (ins.Opcode == Opcode.JMP && ins.Operands[0].Type == OperandType.Pc) {
         p = new IntPtr(p.ToInt64() + ins.Size + (long) ins.Imm.Imm);
         goto replay;
+      }
+
+      // OK, now we need to go in reverse over all of the instructions leading up to the CALL
+      // and split the opcodes leading up to the CALL into opcodes responsible for setting up the input params (up to 4)
+      // and buffer params that are actually forced upon the normal JIT to allocate more space for ReJit
+
+      // The call is 5 bytes, that's a constant
+      var availableSpace = dc.Instructions.Last().Size;
+      var mem = (byte *) p.ToPointer() + offset;
+      // Sometimes the Jit pisses nops on us, so we're happy to use it
+      while (*(mem++) == 0x90)
+        availableSpace++;
+      mem = (byte *) p.ToPointer() + offset - 5;
+
+      if (availableSpace >= replacement.Length) {
+        ShoveBytes(mem, replacement);
+        return;
       }
 
       foreach (var rp in registerParams)
@@ -392,6 +185,12 @@ namespace ReJit
         FindSlackParam(dc, sp);
 
       Console.WriteLine(offset);
+    }
+
+    private static unsafe void ShoveBytes(byte* mem, byte[] replacement)
+    {
+      foreach (var r in replacement)
+        *(mem++) = r;
     }
 
     public static IntPtr GetMethodAddress(MethodBase method)
@@ -489,6 +288,24 @@ namespace ReJit
     {
       switch (Type.GetTypeCode(rawDefaultValue.GetType()))
       {
+        case TypeCode.Byte:
+          return imm.Imm == (byte)rawDefaultValue;
+        case TypeCode.UInt16:
+          return imm.Imm == (ushort)rawDefaultValue;
+        case TypeCode.UInt32:
+          return imm.Imm == (uint)rawDefaultValue;
+        case TypeCode.UInt64:
+          return imm.Imm == (ulong)rawDefaultValue;
+        default:
+          throw new ArgumentOutOfRangeException();
+      }
+    }
+
+#if DISTORM_IMM_SIZE_WORKING
+    private static bool CompareImmToObject(object rawDefaultValue, DecomposedInst.ImmVariant imm)
+    {
+      switch (Type.GetTypeCode(rawDefaultValue.GetType()))
+      {
         case TypeCode.SByte:
           if (imm.Size != 1)
             return false;
@@ -525,22 +342,32 @@ namespace ReJit
           throw new ArgumentOutOfRangeException();
       }
     }
+#endif
 
-    private static void GetParameterCounts(out Register[] intrinsincParams, out BufferParam[] slackParams)
+    private static void GetRejitProperties(out Register[] intrinsincParams, out BufferParam[] slackParams, out byte[] replacement)
     {
       var sf = new StackFrame(2);
 
+      var m = sf.GetMethod();
       intrinsincParams =
-        sf.GetMethod()
-          .GetParameters()
-          .TakeWhile((prm, i) => !prm.IsOptional && i < 4)
-          .Select((prm, i) => IndexToReg(i, prm.ParameterType)).ToArray();
+        m
+         .GetParameters()
+         .TakeWhile((prm, i) => !prm.IsOptional && i < 4)
+         .Select((prm, i) => IndexToReg(i, prm.ParameterType)).ToArray();
 
       slackParams =
-        sf.GetMethod()
-        .GetParameters()
-        .Where(prm => prm.IsOptional)
-        .Select(prm => new BufferParam { Type = prm.ParameterType, RawDefaultValue = prm.RawDefaultValue }).ToArray();
+        m
+         .GetParameters()
+         .Where(prm => prm.IsOptional)
+         .Select(prm => new BufferParam { Type = prm.ParameterType, RawDefaultValue = prm.RawDefaultValue }).ToArray();
+
+      var hja = (ReJitAttribute)m.GetCustomAttributes(typeof(ReJitAttribute), false).SingleOrDefault();
+
+      if (hja == null)
+        throw new Exception("Cannot rejit a method that is not marked with a valid rejit attribute");
+
+      if (!_intrinsincs.TryGetValue(hja.Replacement, out replacement))
+        throw new Exception(string.Format("Cannot rejit method {0} since replacement {1} doesn't seem to exist", m.Name, hja.Replacement));
 
       Console.WriteLine("real-params {0}", String.Join(", ", intrinsincParams.Select(x => x)));
       Console.WriteLine("buffer params looking for {0}", String.Join(", ", slackParams.Select(x => x.RawDefaultValue)));
@@ -656,32 +483,47 @@ namespace ReJit
       return RDTSC();
     }
 
-    private static byte[] GetOpcodes(string i)
-    {
-      var assembly = Assembly.GetExecutingAssembly();
-      var jitStream = assembly.GetManifestResourceStream("ReJit.Intrinsics." + i + ".o");
-      var bytes = new byte[jitStream.Length];
-      jitStream.Read(bytes, 0, bytes.Length);
-      return bytes;
-    }
-
     public static void Init()
     {
-      var candidates = typeof(Intrinsincs).GetMethods(BindingFlags.Static | BindingFlags.Public);
+      ReadEmbeddedInstrinsincs();
+    }
 
-      foreach (var m in candidates) {
-        var hja = (ReJitAttribute) m.GetCustomAttributes(typeof(ReJitAttribute), false).SingleOrDefault();
-        if (hja == null)
-          continue;
-        Console.WriteLine("Attempting {0}", m.Name);
-        var mh = m.MethodHandle;
-        RuntimeHelpers.PrepareMethod(mh);
-        var p = mh.GetFunctionPointer();
-        //var code = GetOpcodes(hja.Replacement);
-        //if (IntPtr.Size == 8)
-        //  Marshal.Copy(code, 0, p, code.Length);
-        //else
-        //  throw new NotImplementedException();
+    private static void ReadEmbeddedInstrinsincs()
+    {
+      var assembly = Assembly.GetExecutingAssembly();
+      var dotO = assembly.GetManifestResourceStream("ReJit.Intrinsics.intrinsincs.o");
+      var dotMap = assembly.GetManifestResourceStream("ReJit.Intrinsics.intrinsincs.map");
+      var tmp = new byte[dotO.Length];
+      dotO.Read(tmp, 0, tmp.Length);
+
+      string prevName = null, name = null;
+      int prevOffset = 0, fileOffset = 0;
+      foreach (var line in ReadFrom(dotMap).SkipWhile(s => s != "-- Symbols --------------------------------------------------------------------").Skip(5)) {
+        if (string.IsNullOrWhiteSpace(line)) {
+          name = null;
+          fileOffset = tmp.Length;
+        }
+        else {
+          var parts = line.Split(new [] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+          fileOffset = Int32.Parse(parts[0], NumberStyles.HexNumber);
+          name = parts[2];
+        }
+        if (prevName != null) {
+          var b = new byte[fileOffset - prevOffset];
+          Array.Copy(tmp, prevOffset, b, 0, fileOffset - prevOffset);
+          _intrinsincs[prevName] = b;
+        }
+        prevName = name;
+        prevOffset = fileOffset;
+      }
+    }
+
+    static IEnumerable<string> ReadFrom(Stream s)
+    {
+      string line;
+      using (var reader = new StreamReader(s)) {
+        while ((line = reader.ReadLine()) != null)
+        yield return line;
       }
     }
   }
