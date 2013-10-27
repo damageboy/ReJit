@@ -1,5 +1,7 @@
-﻿using System.Linq.Expressions;
-using DiStorm;
+﻿using DiStorm;
+using EasyHook;
+using HookJitCompile;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,9 +27,11 @@ namespace ReJit
     internal string Replacement { get; private set; }
   }
 
-  public static class Intrinsincs
-  {
+  public static class Intrinsincs {
+    private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
     private static readonly Dictionary<string, byte[]> _intrinsincs = new Dictionary<string, byte[]>();
+    private static readonly Dictionary<long, byte[]> _stubMap = new Dictionary<long, byte[]>();
 
     #region Stubs
 
@@ -121,8 +125,16 @@ namespace ReJit
     public static int POPCNT(ulong test) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [ReJit("rdtscp")]
+    [ReJit("_rdtscp")]
     public static ulong RDTSCP(int dummy = 666) { DoReJit(); return 0; }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    [ReJit("rdtsc_fenced")]
+    public static ulong RDTSCFenced(int dummy = 666) { DoReJit(); return 0; }
+
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+    [ReJit("_rdtsc")]
+    public static ulong RDTSC(int dummy = 666) { DoReJit(); return 0; }
 
     [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
     [ReJit("_cpuid")]
@@ -159,6 +171,7 @@ namespace ReJit
       var ins = dc.Instructions[0];
       if (ins.Opcode == Opcode.JMP && ins.Operands[0].Type == OperandType.Pc) {
         p = new IntPtr(p.ToInt64() + ins.Size + (long) ins.Imm.Imm);
+        Log.Debug("Detected edit-and-continue, decompiling the real stuff");
         goto replay;
       }
 
@@ -176,6 +189,7 @@ namespace ReJit
       var memEnd = memStart;
 
       if (availableSpace >= replacement.Length) {
+        Log.Debug("CALL had {0} bytes of space while replace is {1} bytes long, patching and finishing up", availableSpace, replacement.Length);
         ShoveBytesPaddedWithNOPs(memStart, availableSpace, replacement);
         return;
       }
@@ -187,6 +201,7 @@ namespace ReJit
       byte* slackMemEnd = null;
 
       var targetsLeft = registerParams.Length + slackParams.Length;
+      Log.Debug("Need to look for {0} load instructions", targetsLeft);
 
       // We go over the existing instructions in reverse one by one, until we find all of our relevant
       // bits, we skip the first one since it's the CALL that brought us here
@@ -197,7 +212,7 @@ namespace ReJit
           var op = x.Operands[0];
           if (op.Type != OperandType.Reg || op.Register != reg)
             continue;
-          Console.WriteLine("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
+          Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
           if (paramsMemStart == null && paramsMemEnd == null)
             paramsMemStart = paramsMemEnd = memStart;
           memStart -= x.Size;
@@ -210,8 +225,8 @@ namespace ReJit
             continue;
           var op = x.Operands[1];
           if (op.Type != OperandType.Imm || !CompareImmToObject(reg.RawDefaultValue, x.Imm))
-            continue;          
-          Console.WriteLine("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode, x.Imm.Imm);
+            continue;
+          Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode, x.Imm.Imm);
           if (slackMemEnd == null && slackMemStart == null)
             slackMemEnd = slackMemStart = memStart;
           memStart -= x.Size;
@@ -220,21 +235,22 @@ namespace ReJit
           break;
         }
         if (targetsLeft == 0)
-          break;      
+          break;
       }
       if (slackMemEnd != paramsMemStart)
         throw new Exception("slack and params are overlapping");
+      
       var paramsLen = (int) ((ulong)paramsMemEnd - (ulong)paramsMemStart);
       var slackLen = (int) ((ulong)slackMemEnd - (ulong)slackMemStart);
-      Console.WriteLine("Mem is {0} bytes (0x{1:X}-0x{2:X}", (ulong)memEnd - (ulong)memStart, (ulong)memStart, (ulong)memEnd);
-      Console.WriteLine("Params is {0} bytes (0x{1:X}-0x{2:X}", paramsLen, (ulong)paramsMemStart, (ulong)paramsMemEnd);
-      Console.WriteLine("Slack is {0} bytes (0x{1:X}-0x{2:X}", slackLen, (ulong)slackMemStart, (ulong)slackMemEnd);
-
-      ShoveBytes(slackMemStart, paramsLen, paramsMemStart);
-      availableSpace += slackLen;
-      if (availableSpace < replacement.Length) 
+      availableSpace += slackLen;      
+      Log.Debug("Code area is {0} bytes (0x{1:X}-0x{2:X}", (ulong)memEnd - (ulong)memStart, (ulong)memStart, (ulong)memEnd);
+      Log.Debug("Params is {0} bytes (0x{1:X}-0x{2:X}", paramsLen, (ulong)paramsMemStart, (ulong)paramsMemEnd);
+      Log.Debug("Slack is {0} bytes (0x{1:X}-0x{2:X}", slackLen, (ulong)slackMemStart, (ulong)slackMemEnd);
+      Log.Debug("Available space is {0} bytes, replacement is {1} bytes", availableSpace, replacement.Length);
+      if (availableSpace < replacement.Length)
         throw new Exception("Cannot re-jit since there's not enough space for the replacement opcodes");
-      ShoveBytesPaddedWithNOPs(slackMemStart + paramsLen, availableSpace, replacement);           
+      ShoveBytes(slackMemStart, paramsLen, paramsMemStart);     
+      ShoveBytesPaddedWithNOPs(slackMemStart + paramsLen, availableSpace, replacement);
     }
 
     private static unsafe void ShoveBytesPaddedWithNOPs(byte* dst, int length, byte[] replacement)
@@ -256,56 +272,6 @@ namespace ReJit
     {
       for (var i = 0; i < length; i++)
         *(dst++) = src[i];
-    }
-
-    public static IntPtr GetMethodAddress(MethodBase method)
-    {
-      if ((method is DynamicMethod))
-      {
-        unsafe
-        {
-          byte* ptr = (byte*) GetDynamicMethodRuntimeHandle(method).ToPointer();
-          if (IntPtr.Size == 8)
-          {
-            ulong* address = (ulong*) ptr;
-            address += 6;
-            return new IntPtr(address);
-          }
-          else
-          {
-            uint* address = (uint*) ptr;
-            address += 6;
-            return new IntPtr(address);
-          }
-        }
-      }
-
-      RuntimeHelpers.PrepareMethod(method.MethodHandle);
-
-      unsafe
-      {
-        // Some dwords in the met
-        int skip = 10;
-
-        // Read the method index.
-        UInt64* location = (UInt64*) (method.MethodHandle.Value.ToPointer());
-        int index = (int) (((*location) >> 32) & 0xFF);
-
-        if (IntPtr.Size == 8)
-        {
-          // Get the method table
-          ulong* classStart = (ulong*) method.DeclaringType.TypeHandle.Value.ToPointer();
-          ulong* address = classStart + index + skip;
-          return new IntPtr(address);
-        }
-        else
-        {
-          // Get the method table
-          uint* classStart = (uint*) method.DeclaringType.TypeHandle.Value.ToPointer();
-          uint* address = classStart + index + skip;
-          return new IntPtr(address);
-        }
-      }
     }
 
     private static IntPtr GetDynamicMethodRuntimeHandle(MethodBase method)
@@ -404,8 +370,8 @@ namespace ReJit
       if (!_intrinsincs.TryGetValue(hja.Replacement, out replacement))
         throw new Exception(string.Format("Cannot rejit method {0} since replacement {1} doesn't seem to exist", m.Name, hja.Replacement));
 
-      Console.WriteLine("real-params {0}", String.Join(", ", intrinsincParams.Select(x => x)));
-      Console.WriteLine("buffer params looking for {0}", String.Join(", ", slackParams.Select(x => x.RawDefaultValue)));
+      Log.Debug("real-params {0}", String.Join(", ", intrinsincParams.Select(x => x)));
+      Log.Debug("buffer params looking for {0}", String.Join(", ", slackParams.Select(x => x.RawDefaultValue)));
     }
 
     private static Register IndexToReg(int i, Type code)
@@ -492,48 +458,60 @@ namespace ReJit
           return 64;
         case TypeCode.UInt64:
           return 64;
-        case TypeCode.Single:
-        case TypeCode.Double:
-        case TypeCode.Empty:
-        case TypeCode.Object:
-        case TypeCode.DBNull:
-        case TypeCode.Decimal:
-        case TypeCode.DateTime:
-        case TypeCode.String:
         default:
           throw new ArgumentOutOfRangeException("code");
       }
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-    [ReJit("rdtsc")]
-    public static ulong RDTSC(int dummy1 = 666, byte dummy2 = 66)
-    {
-      RDTSC();
-      RDTSC();
-      RDTSC();
-      RDTSC();
-      RDTSC();
-      RDTSC();
-      return RDTSC();
-    }
-
     public static void Init()
     {
       ReadEmbeddedInstrinsincs();
+      ScanForIntrinsincStubs();
+      InstallJitHook();
+    }
+
+    private static void InstallJitHook()
+    {
+      var hook = GetManagedJitCompiler();
+      hook.HookClrJitCompiler();
+    }
+
+    private static void ScanForIntrinsincStubs()
+    {
+      var candidates = typeof(Intrinsincs).GetMethods(BindingFlags.Static | BindingFlags.Public);
+
+      foreach (var m in candidates) {
+        var hja = (ReJitAttribute) m.GetCustomAttributes(typeof (ReJitAttribute), false).SingleOrDefault();
+        if (hja == null)
+          continue;        
+        var mh = m.MethodHandle;
+        RuntimeHelpers.PrepareMethod(mh);
+        var p = mh.GetFunctionPointer();
+        if (!_intrinsincs.ContainsKey(hja.Replacement))
+          throw new Exception(string.Format("There's no intrinsinc registered for {0}", hja.Replacement));
+        _stubMap[p.ToInt64()] = _intrinsincs[hja.Replacement];
+      }
+      Log.Debug("Found {0} matching intrinsinc stubs", _stubMap.Count);
     }
 
     private static void ReadEmbeddedInstrinsincs()
     {
       var assembly = Assembly.GetExecutingAssembly();
       var dotO = assembly.GetManifestResourceStream("ReJit.Intrinsics.intrinsincs.o");
+      if (dotO == null || dotO.Length == 0)
+        throw new BadImageFormatException("Can't find embedded intrinsincs inside assembly");
       var dotMap = assembly.GetManifestResourceStream("ReJit.Intrinsics.intrinsincs.map");
+      if (dotMap == null || dotMap.Length == 0)
+        throw new BadImageFormatException("Can't find embedded map inside assembly");
+
       var tmp = new byte[dotO.Length];
       dotO.Read(tmp, 0, tmp.Length);
 
-      string prevName = null, name = null;
-      int prevOffset = 0, fileOffset = 0;
+      string prevName = null;
+      var prevOffset = 0;
       foreach (var line in ReadFrom(dotMap).SkipWhile(s => s != "-- Symbols --------------------------------------------------------------------").Skip(5)) {
+        var fileOffset = 0;
+        string name;
         if (string.IsNullOrWhiteSpace(line)) {
           name = null;
           fileOffset = tmp.Length;
@@ -551,6 +529,7 @@ namespace ReJit
         prevName = name;
         prevOffset = fileOffset;
       }
+      Log.Debug("Found {0} embedded intrinsincs", _intrinsincs.Count);
     }
 
     static IEnumerable<string> ReadFrom(Stream s)
@@ -560,6 +539,63 @@ namespace ReJit
         while ((line = reader.ReadLine()) != null)
         yield return line;
       }
+    }
+
+    [DllImport("clrjit.dll", SetLastError = true, PreserveSig = true, CallingConvention = CallingConvention.StdCall)]
+    private static extern IntPtr getJit();
+
+    public static ClrJitCompilerHook GetManagedJitCompiler()
+    {
+      ClrJitCompilerHook clrJitCompiler = null;
+      var jit = getJit();
+      var jitCompileMethod = GetVTableAddresses(jit, 1).First();
+      clrJitCompiler = new ClrJitCompilerHook(jit, jitCompileMethod);
+      return clrJitCompiler;
+    }
+
+    private static IntPtr[] GetVTableAddresses(IntPtr pointer, int numberOfMethods)
+    {
+      var vtblAddresses = new List<IntPtr>();
+      var vTable = Marshal.ReadIntPtr(pointer);
+      for (var i = 0; i < numberOfMethods; i++)
+        vtblAddresses.Add(Marshal.ReadIntPtr(vTable, i * IntPtr.Size));
+      return vtblAddresses.ToArray();
+    }
+  }
+
+  [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
+  public unsafe delegate CorJitResult CompileMethodDelegate(IntPtr thisJit, [In] IntPtr corJitInfo, [In] CorMethodInfo *corMethodInfo, CorJitFlag flags, [Out] byte **ilCode, [Out] IntPtr *ilCodeSize);
+
+  public class ClrJitCompilerHook
+  {
+    private IntPtr _clrJitPointer;
+    private readonly IntPtr _compileMethod;
+    private LocalHook _localJitHook;
+    private readonly CompileMethodDelegate _hookMethod;
+    private CompileMethodDelegate _jitCompileMethod;
+    private static Logger Log = LogManager.GetCurrentClassLogger();
+
+    internal unsafe ClrJitCompilerHook(IntPtr clrJit, IntPtr compileMethod)
+    {
+      _clrJitPointer = clrJit;
+      _compileMethod = compileMethod;
+      _hookMethod = ClrJitCompilerCalled;
+      _jitCompileMethod = (CompileMethodDelegate)Marshal.GetDelegateForFunctionPointer(_compileMethod, typeof(CompileMethodDelegate));
+    }
+
+    public ClrJitCompilerHook() { }
+
+    internal unsafe CorJitResult ClrJitCompilerCalled(IntPtr thisJit, IntPtr corJitInfo, CorMethodInfo *corMethodInfo, CorJitFlag flags, byte **ilCode, IntPtr *ilCodeSize)
+    {
+      var result = _jitCompileMethod(thisJit, corJitInfo, corMethodInfo, flags, ilCode, ilCodeSize);
+      Log.Debug("OnJitCompileCalled! 0x{0:X} -> 0x{1:X}", (ulong)corMethodInfo->methodHandle, (ulong) *ilCode);
+      return result;
+    }
+
+    public unsafe void HookClrJitCompiler()
+    {
+      _localJitHook = LocalHook.Create(_compileMethod, _hookMethod, this);
+      _localJitHook.ThreadACL.SetExclusiveACL(new Int32[] {0});
     }
   }
 

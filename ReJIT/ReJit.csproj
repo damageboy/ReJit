@@ -63,6 +63,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\libs\DiStorm.dll</HintPath>
     </Reference>
+    <Reference Include="EasyHook">
+      <HintPath>..\libs\EasyHook.dll</HintPath>
+    </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\packages\NLog.2.1.0\lib\net40\NLog.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -74,10 +80,12 @@
   <ItemGroup>
     <Compile Include="CPUID.cs" />
     <Compile Include="Intrinsincs.cs" />
+    <Compile Include="JITStructs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Intrinsics\intrinsincs.asm" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Intrinsics\intrinsincs.map" />

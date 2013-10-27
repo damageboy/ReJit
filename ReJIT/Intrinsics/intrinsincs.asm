@@ -87,7 +87,6 @@ shl rdx,32
 or rax,rdx
 
 _rdtsc:
-sfence
 rdtsc
 shl rdx,32
 or rax,rdx

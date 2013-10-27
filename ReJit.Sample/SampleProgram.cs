@@ -1,15 +1,46 @@
-﻿using System;
+﻿using System.Reflection;
+using NLog;
+using NLog.Config;
+using NLog.Targets;
+using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace ReJit.Sample
 {
-  class Program
+  class SampleProgram
   {
     public const int MHZ = 2400000;
+    private static Logger Log = LogManager.GetCurrentClassLogger();
+
+    [Conditional("DEBUG")]
+    static void SetupLogging()
+    {
+      var config = new LoggingConfiguration();
+      var consoleTarget = new ConsoleTarget {
+        Layout = @"${date:format=HH\:MM\:ss} ${message}${onexception:${newline}${exception:format=tostring}}"
+      };
+      config.AddTarget("console", consoleTarget);
+
+      var rule = new LoggingRule("*", LogLevel.Debug, consoleTarget);
+      config.LoggingRules.Add(rule);
+
+      LogManager.Configuration = config;
+    }
 
     static public void Main(string[] args)
-    {
+    {      
+      SetupLogging();
+      DumpAllMethodHandles();
       Intrinsincs.Init();
+      var samplesThread = new Thread(RunSamples);
+      samplesThread.Start();
+      samplesThread.Join();
+    }
+
+    static public void RunSamples()
+    {
       TestCPUID();
       TestBSWAP32();
       //TestBSWAP64();
@@ -25,6 +56,14 @@ namespace ReJit.Sample
         TestRDTSCP();
       else
         Console.WriteLine("RDTSCP not supported, skipping");
+
+    }
+
+    private static void DumpAllMethodHandles()
+    {
+      var candidates = typeof(SampleProgram).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+      foreach (var m in candidates)
+        Log.Debug("{0} -> 0x{1:X}", m.Name, m.MethodHandle.Value.ToInt64());      
     }
 
     private static void TestBSF16()
