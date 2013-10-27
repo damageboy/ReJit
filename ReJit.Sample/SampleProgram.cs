@@ -1,11 +1,11 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
-using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace ReJit.Sample
 {
@@ -30,11 +30,12 @@ namespace ReJit.Sample
     }
 
     static public void Main(string[] args)
-    {      
+    {
       SetupLogging();
       DumpAllMethodHandles();
       Intrinsincs.Init();
       var samplesThread = new Thread(RunSamples);
+      samplesThread.Name = "SamplesThread";
       samplesThread.Start();
       samplesThread.Join();
     }
@@ -63,7 +64,7 @@ namespace ReJit.Sample
     {
       var candidates = typeof(SampleProgram).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
       foreach (var m in candidates)
-        Log.Debug("{0} -> 0x{1:X}", m.Name, m.MethodHandle.Value.ToInt64());      
+        Log.Debug("{0} -> 0x{1:X}", m.Name, m.MethodHandle.Value.ToInt64());
     }
 
     private static void TestBSF16()

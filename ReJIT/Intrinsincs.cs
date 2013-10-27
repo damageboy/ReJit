@@ -1,8 +1,4 @@
-﻿using DiStorm;
-using EasyHook;
-using HookJitCompile;
-using NLog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -12,6 +8,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DiStorm;
+using EasyHook;
+using HookJitCompile;
+using NLog;
 using OperandType = DiStorm.OperandType;
 
 namespace ReJit
@@ -239,18 +239,19 @@ namespace ReJit
       }
       if (slackMemEnd != paramsMemStart)
         throw new Exception("slack and params are overlapping");
-      
+
       var paramsLen = (int) ((ulong)paramsMemEnd - (ulong)paramsMemStart);
       var slackLen = (int) ((ulong)slackMemEnd - (ulong)slackMemStart);
-      availableSpace += slackLen;      
+      availableSpace += slackLen;
       Log.Debug("Code area is {0} bytes (0x{1:X}-0x{2:X}", (ulong)memEnd - (ulong)memStart, (ulong)memStart, (ulong)memEnd);
       Log.Debug("Params is {0} bytes (0x{1:X}-0x{2:X}", paramsLen, (ulong)paramsMemStart, (ulong)paramsMemEnd);
       Log.Debug("Slack is {0} bytes (0x{1:X}-0x{2:X}", slackLen, (ulong)slackMemStart, (ulong)slackMemEnd);
       Log.Debug("Available space is {0} bytes, replacement is {1} bytes", availableSpace, replacement.Length);
       if (availableSpace < replacement.Length)
         throw new Exception("Cannot re-jit since there's not enough space for the replacement opcodes");
-      ShoveBytes(slackMemStart, paramsLen, paramsMemStart);     
+      ShoveBytes(slackMemStart, paramsLen, paramsMemStart);
       ShoveBytesPaddedWithNOPs(slackMemStart + paramsLen, availableSpace, replacement);
+      Log.Debug("Done patching call-site for {0}@0x{1:X}", m.Name, (ulong) slackMemStart);
     }
 
     private static unsafe void ShoveBytesPaddedWithNOPs(byte* dst, int length, byte[] replacement)
@@ -465,9 +466,22 @@ namespace ReJit
 
     public static void Init()
     {
+      PreJitOurselves();
       ReadEmbeddedInstrinsincs();
       ScanForIntrinsincStubs();
       InstallJitHook();
+    }
+
+    private static void PreJitOurselves()
+    {
+      var candidates = typeof(Intrinsincs).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+      foreach (var m in candidates) {
+        // We don't want to do the Insrinsincs stubs, non of our business here
+        var hja = (ReJitAttribute) m.GetCustomAttributes(typeof (ReJitAttribute), false).SingleOrDefault();
+        if (hja != null)
+          continue;
+        RuntimeHelpers.PrepareMethod(m.MethodHandle);
+      }
     }
 
     private static void InstallJitHook()
@@ -483,7 +497,7 @@ namespace ReJit
       foreach (var m in candidates) {
         var hja = (ReJitAttribute) m.GetCustomAttributes(typeof (ReJitAttribute), false).SingleOrDefault();
         if (hja == null)
-          continue;        
+          continue;
         var mh = m.MethodHandle;
         RuntimeHelpers.PrepareMethod(mh);
         var p = mh.GetFunctionPointer();
