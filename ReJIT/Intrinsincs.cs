@@ -8,11 +8,11 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using DiStorm;
+using diStorm;
 using EasyHook;
 using HookJitCompile;
 using NLog;
-using OperandType = DiStorm.OperandType;
+using OperandType = diStorm.OperandType;
 
 namespace ReJit
 {
@@ -161,11 +161,9 @@ namespace ReJit
       var p = mh.GetFunctionPointer();
       var offset = sf.GetNativeOffset();
     replay:
-      var copy = new byte[offset];
-      Marshal.Copy(p, copy, 0, offset);
-      var ci = new CodeInfo((long)p, copy, DecodeType.Decode64Bits, 0);
-      var dc = new DecomposedResult(100);
-      DiStorm3.Decompose(ci, dc);
+      var ci = new CodeInfo((long)p, (byte*) p.ToPointer(), offset, DecodeType.Decode64Bits, 0);
+      var dc = DiStorm3.Decompose(ci, 100);
+      
 
       // Attempt to detect and handle edit-and-continue crap while debugging
       var ins = dc.Instructions[0];
@@ -286,7 +284,7 @@ namespace ReJit
         return method.MethodHandle.Value;
     }
 
-    private static bool CompareImmToObject(object rawDefaultValue, DecomposedInst.ImmVariant imm)
+    private static bool CompareImmToObject(object rawDefaultValue, DecomposedInstruction.ImmVariant imm)
     {
       switch (Type.GetTypeCode(rawDefaultValue.GetType()))
       {
