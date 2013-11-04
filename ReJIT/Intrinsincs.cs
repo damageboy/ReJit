@@ -494,6 +494,7 @@ replay:
         if (!_intrinsincs.ContainsKey(hja.Replacement))
           throw new Exception(string.Format("There's no intrinsinc registered for {0}", hja.Replacement));
         _stubMap[p.ToInt64()] = _intrinsincs[hja.Replacement];
+        Log.Debug("Added 0x{0:X} -> {1}", p.ToInt64(), hja.Replacement);
       }
       Log.Debug("Found {0} matching intrinsinc stubs", _stubMap.Count);
     }
