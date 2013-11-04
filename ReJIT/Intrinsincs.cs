@@ -160,83 +160,85 @@ namespace ReJit
       var mh = m.MethodHandle;
       var p = mh.GetFunctionPointer();
       var offset = sf.GetNativeOffset();
-    replay:
-      var ci = new CodeInfo((long)p, (byte*) p.ToPointer(), offset, DecodeType.Decode64Bits, 0);
-      var dc = DiStorm3.Decompose(ci, 100);
-      
 
-      // Attempt to detect and handle edit-and-continue crap while debugging
-      var ins = dc.Instructions[0];
-      if (ins.Opcode == Opcode.JMP && ins.Operands[0].Type == OperandType.Pc) {
-        p = new IntPtr(p.ToInt64() + ins.Size + (long) ins.Imm.Imm);
-        Log.Debug("Detected edit-and-continue, decompiling the real stuff");
-        goto replay;
-      }
-
-      // OK, now we need to go in reverse over all of the instructions leading up to the CALL
-      // and split the opcodes leading up to the CALL into opcodes responsible for setting up the input params (up to 4)
-      // and buffer params that are actually forced upon the normal JIT to allocate more space for ReJit
-
-      // The call is 5 bytes, that's a constant
-      var availableSpace = dc.Instructions.Last().Size;
-      var memStart = (byte *) p.ToPointer() + offset;
-      // Sometimes the Jit pisses nops on us, so we're happy to use it
-      while (*(memStart++) == 0x90)
-        availableSpace++;
-      memStart = (byte *) p.ToPointer() + offset - 5;
-      var memEnd = memStart;
-
-      if (availableSpace >= replacement.Length) {
-        Log.Debug("CALL had {0} bytes of space while replace is {1} bytes long, patching and finishing up", availableSpace, replacement.Length);
-        ShoveBytesPaddedWithNOPs(memStart, availableSpace, replacement);
-        return;
-      }
-
-      byte *paramsMemStart = null;
+      byte* paramsMemStart = null;
       byte* paramsMemEnd = null;
-
       byte* slackMemStart = null;
       byte* slackMemEnd = null;
-
-      var targetsLeft = registerParams.Length + slackParams.Length;
-      Log.Debug("Need to look for {0} load instructions", targetsLeft);
-
-      // We go over the existing instructions in reverse one by one, until we find all of our relevant
-      // bits, we skip the first one since it's the CALL that brought us here
-      foreach (var x in dc.Instructions.Reverse().Skip(1)) {
-        foreach (var reg in registerParams) {
-          if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
-            continue;
-          var op = x.Operands[0];
-          if (op.Type != OperandType.Reg || op.Register != reg)
-            continue;
-          Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
-          if (paramsMemStart == null && paramsMemEnd == null)
-            paramsMemStart = paramsMemEnd = memStart;
-          memStart -= x.Size;
-          paramsMemStart -= x.Size;
-          targetsLeft--;
-          break;
+      int availableSpace;
+      var memStart = (byte*) p.ToPointer() + offset;
+      var memEnd = memStart;
+replay:
+      var ci = new CodeInfo((long)p, (byte*) p.ToPointer(), offset, DecodeType.Decode64Bits, 0);
+      using (var dc = DiStorm3.Decompose(ci, 100)) {
+        // Attempt to detect and handle edit-and-continue crap while debugging
+        var ins = dc.Instructions[0];
+        if (ins.Opcode == Opcode.JMP && ins.Operands[0].Type == OperandType.Pc) {
+          p = new IntPtr(p.ToInt64() + ins.Size + (long) ins.Imm.Imm);
+          Log.Debug("Detected edit-and-continue, decompiling the real stuff");
+          dc.Dispose();
+          goto replay;
         }
-        foreach (var reg in slackParams) {
-          if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
-            continue;
-          var op = x.Operands[1];
-          if (op.Type != OperandType.Imm || !CompareImmToObject(reg.RawDefaultValue, x.Imm))
-            continue;
-          Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode, x.Imm.Imm);
-          if (slackMemEnd == null && slackMemStart == null)
-            slackMemEnd = slackMemStart = memStart;
-          memStart -= x.Size;
-          slackMemStart -= x.Size;
-          targetsLeft--;
-          break;
+
+        // OK, now we need to go in reverse over all of the instructions leading up to the CALL
+        // and split the opcodes leading up to the CALL into opcodes responsible for setting up the input params (up to 4)
+        // and buffer params that are actually forced upon the normal JIT to allocate more space for ReJit
+
+        // The call is 5 bytes, that's a constant
+        availableSpace = dc.Instructions.Last().Size;
+        // Sometimes the Jit pisses nops on us, so we're happy to use it
+        while (*(memStart++) == 0x90)
+          availableSpace++;
+        memStart = (byte*) p.ToPointer() + offset - 5;
+
+        if (availableSpace >= replacement.Length) {
+          Log.Debug("CALL had {0} bytes of space while replace is {1} bytes long, patching and finishing up",
+            availableSpace, replacement.Length);
+          ShoveBytesPaddedWithNOPs(memStart, availableSpace, replacement);
+          return;
         }
-        if (targetsLeft == 0)
-          break;
+
+        var targetsLeft = registerParams.Length + slackParams.Length;
+        Log.Debug("Need to look for {0} load instructions", targetsLeft);
+
+        // We go over the existing instructions in reverse one by one, until we find all of our relevant
+        // bits, we skip the first one since it's the CALL that brought us here
+        foreach (var x in dc.Instructions.Reverse().Skip(1)) {
+          foreach (var reg in registerParams) {
+            if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
+              continue;
+            var op = x.Operands[0];
+            if (op.Type != OperandType.Reg || op.Register != reg)
+              continue;
+            Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
+            if (paramsMemStart == null && paramsMemEnd == null)
+              paramsMemStart = paramsMemEnd = memStart;
+            memStart -= x.Size;
+            paramsMemStart -= x.Size;
+            targetsLeft--;
+            break;
+          }
+          foreach (var reg in slackParams) {
+            if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
+              continue;
+            var op = x.Operands[1];
+            if (op.Type != OperandType.Imm || !CompareImmToObject(reg.RawDefaultValue, x.Imm))
+              continue;
+            Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode,
+              x.Imm.Imm);
+            if (slackMemEnd == null && slackMemStart == null)
+              slackMemEnd = slackMemStart = memStart;
+            memStart -= x.Size;
+            slackMemStart -= x.Size;
+            targetsLeft--;
+            break;
+          }
+          if (targetsLeft == 0)
+            break;
+        }
+        if (slackMemEnd != paramsMemStart)
+          throw new Exception("slack and params are overlapping");
       }
-      if (slackMemEnd != paramsMemStart)
-        throw new Exception("slack and params are overlapping");
 
       var paramsLen = (int) ((ulong)paramsMemEnd - (ulong)paramsMemStart);
       var slackLen = (int) ((ulong)slackMemEnd - (ulong)slackMemStart);
