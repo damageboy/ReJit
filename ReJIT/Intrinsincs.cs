@@ -276,17 +276,6 @@ replay:
         *(dst++) = src[i];
     }
 
-    private static IntPtr GetDynamicMethodRuntimeHandle(MethodBase method)
-    {
-        if (method is DynamicMethod)
-        {
-            FieldInfo fieldInfo = typeof(DynamicMethod).GetField("m_method",
-                                  BindingFlags.NonPublic | BindingFlags.Instance);
-            return ((RuntimeMethodHandle)fieldInfo.GetValue(method)).Value;
-        }
-        return method.MethodHandle.Value;
-    }
-
     private static bool CompareImmToObject(object rawDefaultValue, DecomposedInstruction.ImmVariant imm)
     {
       switch (Type.GetTypeCode(rawDefaultValue.GetType()))
