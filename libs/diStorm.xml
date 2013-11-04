@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>diStorm</name>
+    </assembly>
+    <members>
+        <member name="M:diStorm.DecodedResult.Dispose">
+            <summary>
+            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            </summary>
+        </member>
+        <member name="M:diStorm.DecomposedResult.Dispose">
+            <summary>
+            Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            </summary>
+        </member>
+        <member name="T:diStorm.OperandType">
+            <summary>
+            Described the type of operand stored in the <see cref="T:diStorm.Operand"/> class
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.None">
+            <summary>
+            No operand, operand is to be ignored.
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.Register">
+            <summary>
+            Register operand, value should be retrieved from the <see cref="P:diStorm.DecodedInstruction.Operands"/>
+            using the <see cref="P:diStorm.Operand.Register"/> property
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.Immediate">
+            <summary>
+            Immediate operand, value should be retrieved using <see cref="P:diStorm.DecomposedInstruction.ImmediateValue"/>
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.Immediate1">
+            <summary>
+            Immediate operand, value should be retrieved using <see cref="P:diStorm.DecomposedInstruction.ImmediateValue"/>/
+            <see cref="F:diStorm.ImmediateValue.Extra"/>/<see cref="F:diStorm.ExtraStruct.I1"/>
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.Immediate2">
+            <summary>
+            Immediate operand, value should be retrieved using <see cref="P:diStorm.DecomposedInstruction.ImmediateValue"/>/<see cref="F:diStorm.ImmediateValue.Extra"/>/<see cref="F:diStorm.ExtraStruct.I2"/>
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.Displacement">
+            <summary>
+            Memory reference with displacement, value can be retrieved using <see cref="P:diStorm.DecomposedInstruction.Displacement"/>
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.SimpleMemory">
+            <summary>
+            Simple memory displacement with optional displacement (For example, a single register memory dereference)
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.ComplexMemory">
+            <summary>
+            Complex memory dereference (Optional <see cref="P:diStorm.DecomposedInstruction.Scale"/>, <see cref="P:diStorm.Operand.Index"/>,
+            <see cref="P:diStorm.DecomposedInstruction.Base"/>, <see cref="P:diStorm.DecomposedInstruction.Displacement"/>
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.ProgramCounter">
+            <summary>
+            Relative to ProgramCounter (EIP in x86/x64), for branching instructions. value should be retrieved
+            using <see cref="P:diStorm.DecomposedInstruction.ImmediateValue"/>/<see cref="F:diStorm.ImmediateValue.RelativeAddress"/>/<see cref="F:diStorm.ExtraStruct.I1"/>
+            </summary>
+        </member>
+        <member name="F:diStorm.OperandType.Pointer">
+            <summary>
+            Absolute far target address for a branching instruction. value should be retrieved
+            using <see cref="P:diStorm.DecomposedInstruction.ImmediateValue"/>.<see cref="F:diStorm.ImmediateValue.Pointer"/>.
+            <see cref="F:diStorm.ImmediatePointerStruct.Segment"/>|<see cref="F:diStorm.ImmediatePointerStruct.Offset"/>
+            </summary>
+        </member>
+        <member name="P:diStorm.Operand.Type">
+            <summary>
+            The different operand types "instruct" how to retrieve the actual operand value, therefore this member is
+            normally accessed before anything else in the <see cref="T:diStorm.Operand"/> class
+            </summary>
+        </member>
+        <member name="P:diStorm.Operand.Index">
+            <summary>
+            	<para>Index, used according to the Type:</para>
+            	<para></para>
+            	<list type="table">
+            		<listheader>
+            			<term>Type</term>
+            			<description>Value Means</description>
+            		</listheader>
+            		<item>
+            			<term><see cref="F:diStorm.OperandType.Register"/></term>
+            			<description>Hold the register used, can be accessed directly using <see cref="P:diStorm.Operand.Register"/></description>
+            		</item>
+            		<item>
+            			<term><see cref="F:diStorm.OperandType.SimpleMemory"/></term>
+            			<description>Hold the 'Base' register, e.g.: [ECX], [EBX+0x1234]</description>
+            		</item>
+            		<item>
+            			<term><see cref="F:diStorm.OperandType.ComplexMemory"/></term>
+            			<description>Holds the 'index' register. e.g.: [EAX*4] is in operand.index.</description>
+            		</item>
+            	</list>
+            	<para></para>
+            </summary>
+        </member>
+        <member name="P:diStorm.Operand.Size">
+            <summary>
+            The size of the operand in bits
+            </summary>
+        </member>
+    </members>
+</doc>

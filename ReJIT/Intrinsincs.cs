@@ -158,7 +158,7 @@ namespace ReJit
       var m = sf.GetMethod();
 
       var mh = m.MethodHandle;
-      var p = mh.GetFunctionPointer();
+      var p = mh.GetFunctionPointer().ToBytePtr();
       var offset = sf.GetNativeOffset();
 
       byte* paramsMemStart = null;
@@ -166,15 +166,16 @@ namespace ReJit
       byte* slackMemStart = null;
       byte* slackMemEnd = null;
       int availableSpace;
-      var memStart = (byte*) p.ToPointer() + offset;
+      var memStart = p + offset;
       var memEnd = memStart;
 replay:
-      var ci = new CodeInfo((long)p, (byte*) p.ToPointer(), offset, DecodeType.Decode64Bits, 0);
+      var ci = new CodeInfo((long)p, p, offset, DecodeType.Decode64Bits, 0);
       using (var dc = DiStorm3.Decompose(ci, 100)) {
         // Attempt to detect and handle edit-and-continue crap while debugging
-        var ins = dc.Instructions[0];
-        if (ins.Opcode == Opcode.JMP && ins.Operands[0].Type == OperandType.Pc) {
-          p = new IntPtr(p.ToInt64() + ins.Size + (long) ins.Imm.Imm);
+        var firstInst = dc.InstructionsPointer;
+        if (firstInst->Opcode == Opcode.JMP && firstInst->Operands[0].Type == OperandType.ProgramCounter) {
+          p += firstInst->Size;
+          p += (ulong) firstInst->ImmediateValue.RelativeAddress.ToBytePtr();
           Log.Debug("Detected edit-and-continue, decompiling the real stuff");
           dc.Dispose();
           goto replay;
@@ -189,7 +190,7 @@ replay:
         // Sometimes the Jit pisses nops on us, so we're happy to use it
         while (*(memStart++) == 0x90)
           availableSpace++;
-        memStart = (byte*) p.ToPointer() + offset - 5;
+        memStart = p + offset - 5;
 
         if (availableSpace >= replacement.Length) {
           Log.Debug("CALL had {0} bytes of space while replace is {1} bytes long, patching and finishing up",
@@ -208,7 +209,7 @@ replay:
             if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
               continue;
             var op = x.Operands[0];
-            if (op.Type != OperandType.Reg || op.Register != reg)
+            if (op.Type != OperandType.Register || op.Register != reg)
               continue;
             Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
             if (paramsMemStart == null && paramsMemEnd == null)
@@ -222,10 +223,10 @@ replay:
             if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
               continue;
             var op = x.Operands[1];
-            if (op.Type != OperandType.Imm || !CompareImmToObject(reg.RawDefaultValue, x.Imm))
+            if (op.Type != OperandType.Immediate || !CompareImmToObject(reg.RawDefaultValue, x.ImmediateValue))
               continue;
             Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode,
-              x.Imm.Imm);
+              x.ImmediateValue.ImmediateValue);
             if (slackMemEnd == null && slackMemStart == null)
               slackMemEnd = slackMemStart = memStart;
             memStart -= x.Size;
@@ -291,13 +292,13 @@ replay:
       switch (Type.GetTypeCode(rawDefaultValue.GetType()))
       {
         case TypeCode.Byte:
-          return imm.Imm == (byte)rawDefaultValue;
+          return imm.ImmediateValue.Byte == (byte)rawDefaultValue;
         case TypeCode.UInt16:
-          return imm.Imm == (ushort)rawDefaultValue;
+          return imm.ImmediateValue.UShort == (ushort)rawDefaultValue;
         case TypeCode.UInt32:
-          return imm.Imm == (uint)rawDefaultValue;
+          return imm.ImmediateValue.UInt == (uint)rawDefaultValue;
         case TypeCode.UInt64:
-          return imm.Imm == (ulong)rawDefaultValue;
+          return imm.ImmediateValue.ULong == (ulong)rawDefaultValue;
         default:
           throw new ArgumentOutOfRangeException();
       }

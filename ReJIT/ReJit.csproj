@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CPUID.cs" />
+    <Compile Include="IntPtrExtensions.cs" />
     <Compile Include="Intrinsincs.cs" />
     <Compile Include="JITStructs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
