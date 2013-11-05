@@ -186,7 +186,7 @@ replay:
         // and buffer params that are actually forced upon the normal JIT to allocate more space for ReJit
 
         // The call is 5 bytes, that's a constant
-        availableSpace = dc.Instructions.Last().Size;
+        availableSpace = dc.InstructionsPointer[dc.UsedInstructions - 1].Size;
         // Sometimes the Jit pisses nops on us, so we're happy to use it
         while (*(memStart++) == 0x90)
           availableSpace++;
@@ -204,33 +204,35 @@ replay:
 
         // We go over the existing instructions in reverse one by one, until we find all of our relevant
         // bits, we skip the first one since it's the CALL that brought us here
-        foreach (var x in dc.Instructions.Reverse().Skip(1)) {
+        var inst = dc.InstructionsPointer + dc.UsedInstructions - 2;
+        var maxInsts = dc.UsedInstructions - 1;
+        for (var i = 0; i < maxInsts; i++) {
+          inst--;
           foreach (var reg in registerParams) {
-            if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
+            if (inst->Opcode != Opcode.LEA && inst->Opcode != Opcode.MOV)
               continue;
-            var op = x.Operands[0];
+            var op = inst->Operands[0];
             if (op.Type != OperandType.Register || op.Register != reg)
               continue;
-            Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg, x.Address.ToInt64(), x.Opcode, op.Register);
+            Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg, inst->Address.ToInt64(), inst->Opcode, op.Register);
             if (paramsMemStart == null && paramsMemEnd == null)
               paramsMemStart = paramsMemEnd = memStart;
-            memStart -= x.Size;
-            paramsMemStart -= x.Size;
+            memStart -= inst->Size;
+            paramsMemStart -= inst->Size;
             targetsLeft--;
             break;
           }
           foreach (var reg in slackParams) {
-            if (x.Opcode != Opcode.LEA && x.Opcode != Opcode.MOV)
+            if (inst->Opcode != Opcode.LEA && inst->Opcode != Opcode.MOV)
               continue;
-            var op = x.Operands[1];
-            if (op.Type != OperandType.Immediate || !CompareImmToObject(reg.RawDefaultValue, x.ImmediateValue))
+            var op = inst->Operands[1];
+            if (op.Type != OperandType.Immediate || !CompareImmToObject(reg.RawDefaultValue, inst->ImmediateValue))
               continue;
-            Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, x.Address.ToInt64(), x.Opcode,
-              x.ImmediateValue.ImmediateValue);
+            Log.Debug("Found assignment to {0}: {1:X} {2} {3}", reg.RawDefaultValue, inst->Address.ToInt64(), inst->Opcode, inst->ImmediateValue.ULong);
             if (slackMemEnd == null && slackMemStart == null)
               slackMemEnd = slackMemStart = memStart;
-            memStart -= x.Size;
-            slackMemStart -= x.Size;
+            memStart -= inst->Size;
+            slackMemStart -= inst->Size;
             targetsLeft--;
             break;
           }
@@ -276,18 +278,18 @@ replay:
         *(dst++) = src[i];
     }
 
-    private static bool CompareImmToObject(object rawDefaultValue, DecomposedInstruction.ImmVariant imm)
+    private static bool CompareImmToObject(object rawDefaultValue, ImmediateValue imm)
     {
       switch (Type.GetTypeCode(rawDefaultValue.GetType()))
       {
         case TypeCode.Byte:
-          return imm.ImmediateValue.Byte == (byte)rawDefaultValue;
+          return imm.Byte == (byte)rawDefaultValue;
         case TypeCode.UInt16:
-          return imm.ImmediateValue.UShort == (ushort)rawDefaultValue;
+          return imm.UShort == (ushort)rawDefaultValue;
         case TypeCode.UInt32:
-          return imm.ImmediateValue.UInt == (uint)rawDefaultValue;
+          return imm.UInt == (uint)rawDefaultValue;
         case TypeCode.UInt64:
-          return imm.ImmediateValue.ULong == (ulong)rawDefaultValue;
+          return imm.ULong == (ulong)rawDefaultValue;
         default:
           throw new ArgumentOutOfRangeException();
       }
@@ -489,12 +491,12 @@ replay:
         if (hja == null)
           continue;
         var mh = m.MethodHandle;
-        RuntimeHelpers.PrepareMethod(mh);
-        var p = mh.GetFunctionPointer();
+        //RuntimeHelpers.PrepareMethod(mh);
+        //var p = mh.GetFunctionPointer();
         if (!_intrinsincs.ContainsKey(hja.Replacement))
           throw new Exception(string.Format("There's no intrinsinc registered for {0}", hja.Replacement));
-        _stubMap[p.ToInt64()] = _intrinsincs[hja.Replacement];
-        Log.Debug("Added 0x{0:X} -> {1}", p.ToInt64(), hja.Replacement);
+        //_stubMap[p.ToInt64()] = _intrinsincs[hja.Replacement];
+        Log.Debug("Added 0x{0:X} -> {1}({2}), MH: 0x{3:X}", null, m.Name, hja.Replacement, mh.Value.ToInt64());
       }
       Log.Debug("Found {0} matching intrinsinc stubs", _stubMap.Count);
     }
@@ -569,7 +571,12 @@ replay:
   }
 
   [UnmanagedFunctionPointer(CallingConvention.StdCall, SetLastError = true)]
-  public unsafe delegate CorJitResult CompileMethodDelegate(IntPtr thisJit, [In] IntPtr corJitInfo, [In] CorMethodInfo *corMethodInfo, CorJitFlag flags, [Out] byte **ilCode, [Out] IntPtr *ilCodeSize);
+  public unsafe delegate CorJitResult CompileMethodDelegate(IntPtr thisJit,
+                                                            IntPtr corJitInfo,
+                                                            CorMethodInfo *corMethodInfo,
+                                                            CorJitFlag flags,
+                                                            byte **jittedCode,
+                                                            int *jittedCodeSize);
 
   public class ClrJitCompilerHook
   {
@@ -590,11 +597,44 @@ replay:
 
     public ClrJitCompilerHook() { }
 
-    internal unsafe CorJitResult ClrJitCompilerCalled(IntPtr thisJit, IntPtr corJitInfo, CorMethodInfo *corMethodInfo, CorJitFlag flags, byte **ilCode, IntPtr *ilCodeSize)
+    internal unsafe CorJitResult ClrJitCompilerCalled(IntPtr thisJit,
+                                                      IntPtr corJitInfo,
+                                                      CorMethodInfo *corMethodInfo,
+                                                      CorJitFlag flags,
+                                                      byte **jittedCode,
+                                                      int *jittedCodeSize)
     {
-      var result = _jitCompileMethod(thisJit, corJitInfo, corMethodInfo, flags, ilCode, ilCodeSize);
-      Log.Debug("OnJitCompileCalled! 0x{0:X} -> 0x{1:X}", (ulong)corMethodInfo->methodHandle, (ulong) *ilCode);
+      var mh = (ulong) corMethodInfo->methodHandle;
+
+      FindIntrinsincCalls(corMethodInfo->ilCode, corMethodInfo->ilCodeSize);
+
+      var result = _jitCompileMethod(thisJit, corJitInfo, corMethodInfo, flags, jittedCode, jittedCodeSize);
+
+      //replay:
+      //var ci = new CodeInfo((long)p, p, offset, DecodeType.Decode64Bits, 0);
+      //using (var dc = DiStorm3.Decompose(ci, 100)) {
+      //  // Attempt to detect and handle edit-and-continue crap while debugging
+      //  var firstInst = dc.InstructionsPointer;
+      //  if (firstInst->Opcode == Opcode.JMP && firstInst->Operands[0].Type == OperandType.ProgramCounter) {
+      //    p += firstInst->Size;
+      //    p += (ulong) firstInst->ImmediateValue.RelativeAddress.ToBytePtr();
+      //    Log.Debug("Detected edit-and-continue, decompiling the real stuff");
+      //    dc.Dispose();
+      //    goto replay;
+      //  }
+
+      Log.Debug("OnJitCompileCalled! 0x{0:X} -> 0x{1:X}|0x{2:X}/{3}", mh, (ulong) *jittedCode, *jittedCodeSize, flags);
       return result;
+    }
+
+    private unsafe void FindIntrinsincCalls(byte* b, uint u)
+    {
+      var methodHeader = *b;
+      var methodLength = 0;
+      //Decide whether this is a Fat header.
+      var isFatHeader = ((methodHeader &  (byte)ILReader.ILMethodHeader.CorILMethod_FatFormat) ==  (byte)ILReader.ILMethodHeader.CorILMethod_FatFormat);
+      bool hasMoreSects = false;
+      Log.Debug("This is a {0} method", isFatHeader ? "Fat" : "Tiny");
     }
 
     public unsafe void HookClrJitCompiler()

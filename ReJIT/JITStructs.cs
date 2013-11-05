@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace HookJitCompile
 {
+  [Flags]
   public enum CorJitResult : uint
   {
     // Note that I dont use FACILITY_NULL for the facility number,
@@ -15,6 +16,7 @@ namespace HookJitCompile
     CORJIT_SKIPPED = 0x80000004U,
   };
 
+  [Flags]
   public enum CorJitFlag : uint
   {
     CORJIT_FLG_SPEED_OPT = 0x00000001,
